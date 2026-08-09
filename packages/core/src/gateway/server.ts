@@ -1922,8 +1922,9 @@ export async function startServer() {
   });
 
   const PORT = CORE_PORT;
-  const server = app.listen(PORT, '127.0.0.1', () => {
-    console.log(`🤖 Nyxora API Server running on port ${PORT}`);
+  const HOST = process.env.HOST || '0.0.0.0';
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`🤖 Nyxora API Server running on ${HOST}:${PORT}`);
     
     // Initialize WebSocket Manager
     initWebSocket(server);
