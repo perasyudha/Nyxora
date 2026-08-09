@@ -352,9 +352,9 @@ function App() {
             >
               <Menu size={18} />
             </button>
-            <span>Nyxora</span>
-            <span style={{color: '#3b82f6'}}>•</span>
-            <span style={{color: 'var(--text-primary)', textTransform: 'capitalize'}}>
+            <span className="brand-name">Nyxora</span>
+            <span className="view-bullet" style={{color: '#3b82f6'}}>•</span>
+            <span className="view-name" style={{color: 'var(--text-primary)', textTransform: 'capitalize'}}>
               {currentView}
             </span>
           </div>

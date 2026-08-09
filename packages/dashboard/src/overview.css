@@ -346,3 +346,47 @@ body.light-theme .badge {
   margin-bottom: 2px;
 }
 
+/* --- MOBILE RESPONSIVE DASHBOARD LAYOUT (< 768px ONLY) --- */
+@media (max-width: 768px) {
+  .overview-container {
+    padding: 12px !important;
+  }
+
+  .form-row {
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .form-group {
+    width: 100% !important;
+    flex: none !important;
+    margin-bottom: 8px !important;
+  }
+
+  .snapshot-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  .logs-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .panel, .nord-panel {
+    padding: 14px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .nord-pill-input, input, select {
+    font-size: 0.85rem !important;
+    padding: 8px 12px !important;
+  }
+}
+
