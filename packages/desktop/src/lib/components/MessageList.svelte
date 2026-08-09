@@ -189,7 +189,10 @@
             subMsgs.push({ ...m });
           }
         } else {
-          currentAssistantMsg = { role: 'assistant', subMessages: [{ ...m }] };
+          currentAssistantMsg = { 
+            role: 'assistant', 
+            subMessages: m.subMessages && m.subMessages.length > 0 ? [...m.subMessages] : [{ ...m }] 
+          };
         }
       } else if (m.role === 'tool') {
         // Do not push into tool_calls again, as the assistant message already contains the tool_calls definition.

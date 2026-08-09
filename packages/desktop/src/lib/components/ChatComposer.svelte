@@ -280,22 +280,36 @@
       
       let fullResponse = '';
       let renderedResponse = '';
-      let turnContents: string[] = [];
+      let completedTurns: any[] = [];
       let currentProgressLogs: { text: string; time: number }[] = [];
       let currentReasoning = '';
       let isSourceClosed = false;
       let intervalId: any;
+      let turnStartTime = Date.now();
 
       cancelCurrentGeneration = () => {
         source.close();
         isSourceClosed = true;
         clearInterval(intervalId);
-        const subMessages = [...turnContents, renderedResponse].map((t, idx, arr) => ({
-          content: t,
-          isStreaming: false
-        }));
-        const combinedContent = turnContents.join('\n\n---\n\n') + (turnContents.length ? '\n\n---\n\n' : '') + renderedResponse;
-        chatStore.updateMessage(streamingId, { isStreaming: false, duration_ms: Date.now() - streamStartTime, content: combinedContent + '\n\n*(Canceled)*', subMessages });
+        const activeTurn = {
+          content: renderedResponse,
+          reasoning_content: currentReasoning,
+          progressLogs: [...currentProgressLogs],
+          isStreaming: false,
+          duration_ms: Date.now() - turnStartTime
+        };
+        const subMessages = [...completedTurns, activeTurn];
+        const combinedContent = completedTurns
+          .map(t => t.content)
+          .filter(t => t && t.trim())
+          .concat(renderedResponse.trim() ? [renderedResponse] : [])
+          .join('\n\n---\n\n');
+        chatStore.updateMessage(streamingId, { 
+          isStreaming: false, 
+          duration_ms: Date.now() - streamStartTime, 
+          content: combinedContent + '\n\n*(Canceled)*',
+          subMessages
+        });
         chatStore.setLoading(false);
         cancelCurrentGeneration = null;
       };
@@ -307,14 +321,30 @@
           const charsPerFrame = inThink ? Math.max(50, remaining) : Math.max(2, Math.ceil(remaining / 4));
           const charsToAdd = fullResponse.slice(renderedResponse.length, renderedResponse.length + charsPerFrame);
           renderedResponse += charsToAdd;
-          
-          const subMessages = [...turnContents, renderedResponse].map((t, idx, arr) => ({
-            content: t,
-            isStreaming: idx === arr.length - 1
-          }));
-          const combinedContent = turnContents.join('\n\n---\n\n') + (turnContents.length ? '\n\n---\n\n' : '') + renderedResponse;
-          chatStore.updateMessage(streamingId, { content: combinedContent, subMessages });
-        } else if (isSourceClosed) {
+        }
+
+        const activeTurn = {
+          content: renderedResponse,
+          reasoning_content: currentReasoning,
+          progressLogs: [...currentProgressLogs],
+          isStreaming: !isSourceClosed,
+          duration_ms: Date.now() - turnStartTime
+        };
+        const subMessages = [...completedTurns, activeTurn];
+        const combinedContent = completedTurns
+          .map(t => t.content)
+          .filter(t => t && t.trim())
+          .concat(renderedResponse.trim() ? [renderedResponse] : [])
+          .join('\n\n---\n\n');
+
+        chatStore.updateMessage(streamingId, { 
+          content: combinedContent, 
+          subMessages,
+          reasoning_content: currentReasoning,
+          progressLogs: currentProgressLogs
+        });
+
+        if (isSourceClosed && renderedResponse.length >= fullResponse.length) {
           clearInterval(intervalId);
           chatStore.updateMessage(streamingId, { isStreaming: false, duration_ms: Date.now() - streamStartTime });
           chatStore.setLoading(false);
@@ -334,18 +364,22 @@
           if (data.chunk) {
             let cleanChunk = data.chunk;
             if (cleanChunk.includes('[CLEAR_STREAM]')) {
-              // Flush any pending animation before clearing
+              // Flush any pending animation before clearing turn
               renderedResponse = fullResponse;
-              turnContents.push(renderedResponse);
-              const subMessages = [...turnContents, ''].map((t, idx, arr) => ({
-                content: t,
-                isStreaming: idx === arr.length - 1
-              }));
-              const combinedContent = turnContents.join('\n\n---\n\n');
-              chatStore.updateMessage(streamingId, { content: combinedContent, subMessages });
-              // Now reset both buffers
+              completedTurns.push({
+                content: renderedResponse,
+                reasoning_content: currentReasoning,
+                progressLogs: [...currentProgressLogs],
+                isStreaming: false,
+                duration_ms: Date.now() - turnStartTime
+              });
+
+              // Reset buffers for next turn
               fullResponse = '';
               renderedResponse = '';
+              currentReasoning = '';
+              currentProgressLogs = [];
+              turnStartTime = Date.now();
               cleanChunk = cleanChunk.split('[CLEAR_STREAM]').pop() || '';
             }
             cleanChunk = cleanChunk.replace(/\[TOOL_CALL_DETECTED\]|\[TOOL_CALL_FINISHED\]/g, '');
