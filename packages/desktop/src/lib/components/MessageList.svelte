@@ -76,7 +76,7 @@
     const currentMsgCount = messages.length;
     const merged = mergedMessages();
     const currentMergedCount = merged.length;
-    const hasStreaming = merged.some(m => m.isStreaming);
+    const hasStreaming = merged.some((m: any) => m.isStreaming || (m.subMessages && m.subMessages.some((sm: any) => sm.isStreaming)));
 
     tick().then(() => {
        updateSpacer();
@@ -126,6 +126,16 @@
     });
   });
 
+  function hasRealText(content: string | undefined): boolean {
+    if (!content) return false;
+    let cleaned = content
+      .replace(/<think>[\s\S]*?<\/think>/gi, '')
+      .replace(/<tool_call>[\s\S]*?<\/tool_call>/gi, '')
+      .replace(/\[TOOL_CALL_DETECTED\][\s\S]*?(\[TOOL_CALL_FINISHED\]|$)/g, '')
+      .trim();
+    return cleaned.length > 0;
+  }
+
   // Merge messages with tool_calls and reasoning
   const mergedMessages = $derived(() => {
     const merged: any[] = [];
@@ -140,37 +150,46 @@
         merged.push(m);
       } else if (m.role === 'assistant') {
         if (currentAssistantMsg) {
-          // Merge tool_calls
-          if (m.tool_calls) {
-            let parsedTools = m.tool_calls;
-            if (typeof parsedTools === 'string') {
-              try { parsedTools = JSON.parse(parsedTools); } catch { parsedTools = []; }
-            }
-            if (!Array.isArray(parsedTools)) parsedTools = [parsedTools];
-            
-            let currentTools = currentAssistantMsg.tool_calls || [];
-            if (typeof currentTools === 'string') {
-              try { currentTools = JSON.parse(currentTools); } catch { currentTools = []; }
-            }
-            if (!Array.isArray(currentTools)) currentTools = [currentTools];
-            
-            currentAssistantMsg.tool_calls = [...currentTools, ...parsedTools];
+          if (!currentAssistantMsg.subMessages) {
+            currentAssistantMsg.subMessages = [{ ...currentAssistantMsg }];
           }
-          // Merge reasoning
-          if (m.reasoning_content) {
-            currentAssistantMsg.reasoning_content = (currentAssistantMsg.reasoning_content || '') + m.reasoning_content;
-          }
-          // Update content
-          if (m.content && m.content.trim() !== '') {
-            if (currentAssistantMsg.tool_calls && currentAssistantMsg.tool_calls.length > 0) {
-              currentAssistantMsg.content = m.content.trim();
-            } else {
-              currentAssistantMsg.content = (currentAssistantMsg.content || '') + m.content;
+          const subMsgs = currentAssistantMsg.subMessages;
+          const lastSub = subMsgs[subMsgs.length - 1];
+          
+          if (!hasRealText(m.content)) {
+            if (m.tool_calls) {
+              let parsedTools = m.tool_calls;
+              if (typeof parsedTools === 'string') {
+                try { parsedTools = JSON.parse(parsedTools); } catch { parsedTools = []; }
+              }
+              if (!Array.isArray(parsedTools)) parsedTools = [parsedTools];
+              
+              let currentTools = lastSub.tool_calls || [];
+              if (typeof currentTools === 'string') {
+                try { currentTools = JSON.parse(currentTools); } catch { currentTools = []; }
+              }
+              if (!Array.isArray(currentTools)) currentTools = [currentTools];
+              
+              lastSub.tool_calls = [...currentTools, ...parsedTools];
             }
+            if (m.reasoning_content) {
+              lastSub.reasoning_content = (lastSub.reasoning_content || '') + m.reasoning_content;
+            }
+            if (m.content) {
+              lastSub.content = (lastSub.content || '') + '\n' + m.content;
+            }
+            if (m.progressLogs) {
+              lastSub.progressLogs = [...(lastSub.progressLogs || []), ...m.progressLogs];
+            }
+            if (m.duration_ms) {
+               lastSub.duration_ms = (lastSub.duration_ms || 0) + m.duration_ms;
+            }
+            lastSub.isStreaming = m.isStreaming;
+          } else {
+            subMsgs.push({ ...m });
           }
-          currentAssistantMsg.isStreaming = m.isStreaming;
         } else {
-          currentAssistantMsg = { ...m };
+          currentAssistantMsg = { role: 'assistant', subMessages: [{ ...m }] };
         }
       } else if (m.role === 'tool') {
         // Do not push into tool_calls again, as the assistant message already contains the tool_calls definition.

@@ -317,7 +317,7 @@ The user explicitly stated your previous response was WRONG, STALE, or INACCURAT
 
   try {
     let turnCount = 0;
-    const MAX_TURNS = 50; // Increased to 50 to allow limitless tool usage without hard crashing
+    const MAX_TURNS = config.agent.max_turns || 50; // Dynamically configurable max iterations
     let consecutiveToolErrors = 0;
     let criticHasFired = false; // Critic Pass hanya aktif 1x per request
     // Anti-loop: track (toolName+argsHash) pairs from the PREVIOUS turn to
@@ -821,7 +821,7 @@ The user explicitly stated your previous response was WRONG, STALE, or INACCURAT
       // Loop continues, sending tool results in the next turn
     }
     
-    const maxTurnMsg = "⚠️ Reached maximum interaction limit (50 turns). Please be more specific or break the task into smaller steps.";
+    const maxTurnMsg = `⚠️ Reached maximum interaction limit (${MAX_TURNS} turns). Context and progress have been preserved. Please review my work so far, and type "continue" or /resume to keep debugging.`;
     logger.addEntry({ role: 'assistant', content: maxTurnMsg }, sessionId);
     triggerBackgroundReview(sessionId);
     return maxTurnMsg;
@@ -891,14 +891,14 @@ The user explicitly stated your previous response was WRONG, STALE, or INACCURAT
     await initializePlugins();
     activeTools = [...pluginManager.getAllToolDefinitions()].filter(t => isSkillActive(t.function.name));
   }
-
-  // FIX: Cache system prompt ONCE before loop (was being rebuilt every turn — wasteful)
+// FIX: Cache system prompt ONCE before loop (was being rebuilt every turn — wasteful)
   const cachedSystemPromptStream = await getSystemPrompt('os', input, sessionId, targetPlatform, workDir);
 
   try {
+    // Global loop state
     let turnCount = 0;
     let nudgeCount = 0;
-    const MAX_TURNS = 50; // Increased to 50 to allow limitless tool usage without hard crashing
+    const MAX_TURNS = config.agent.max_turns || 50; // Configurable auto-pause limit
     let thinkingPrefillRetries = 0; // Prefill-continuation retries for think-only silent stops
     let antiLoopStrikes = 0;
 
@@ -1323,7 +1323,7 @@ Do NOT output filler text like "Wait, I will check". Act now.`;
     }
 
     if (!fullResponse) {
-      const maxTurnMsg = '⚠️ Reached maximum interaction limit (50 turns). Please be more specific or break the task into smaller steps.';
+      const maxTurnMsg = `⚠️ Reached maximum interaction limit (${MAX_TURNS} turns). Context and progress have been preserved. Please review my work so far, and type "continue" or /resume to keep debugging.`;
       logger.addEntry({ role: 'assistant', content: maxTurnMsg }, sessionId);
       fullResponse = maxTurnMsg;
       triggerBackgroundReview(sessionId);

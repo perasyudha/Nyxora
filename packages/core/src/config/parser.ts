@@ -109,6 +109,7 @@ export interface NyxoraConfig {
     log_level?: 'info' | 'debug';
     base_fiat?: string;
     python_path?: string;
+    max_turns?: number;
   };
   llm: {
     provider: string;

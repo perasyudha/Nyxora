@@ -5,7 +5,10 @@ import { Save, Cpu, Key } from 'lucide-react';
 import { apiFetch } from './utils/api';
 
 interface Config {
-  agent: any;
+  agent: {
+    max_turns?: number;
+    [key: string]: any;
+  };
   llm: { 
     provider: string; 
     model: string; 
@@ -62,6 +65,13 @@ export const Models: React.FC<ModelsProps> = ({ config, onConfigChange }) => {
       }
 
       return { ...prev, llm: newLlm };
+    });
+  };
+
+  const handleAgentChange = (field: string, value: string | number) => {
+    setFormData(prev => {
+      if (!prev) return prev;
+      return { ...prev, agent: { ...(prev.agent || {}), [field]: value } };
     });
   };
 
@@ -218,7 +228,18 @@ export const Models: React.FC<ModelsProps> = ({ config, onConfigChange }) => {
               ]}
             />
           </div>
-          <div className="form-group flex-2" style={{ flex: 2 }}></div>
+          <div className="form-group flex-1" style={{ flex: 1 }}>
+            <label className="nord-label" style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem' }}>Max Auto-Pause Turns ({formData.agent?.max_turns || 50})</label>
+            <input 
+              className="nord-slider"
+              style={{ width: '100%' }}
+              type="range" 
+              min="10" max="500" step="10"
+              value={formData.agent?.max_turns || 50} 
+              onChange={e => handleAgentChange('max_turns', parseInt(e.target.value))} 
+            />
+          </div>
+          <div className="form-group flex-1" style={{ flex: 1 }}></div>
         </div>
 
         <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(0,0,0,0.1)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>

@@ -42,14 +42,14 @@ export async function setupGoogleAuth(clientSecretPath: string): Promise<string>
   const success = await setClientSecret(clientSecretPath);
   if (success) {
     const url = getAuthUrlCLI();
-    return `Client secret loaded. Tell the user to open this URL in their browser and authorize the app:\n\n${url}\n\nCRITICAL: Instruct the user that after authorizing, their browser will redirect them (possibly to an error page or a blank local page). They MUST copy the full redirect URL from their browser's address bar (or just the 'code=...' parameter) and send it back to you here. Once they reply with the code, you MUST immediately call the 'submit_google_auth_code' tool to finish the setup!`;
+    return `Client secret loaded. Tell the user to open this URL in their browser and authorize the app:\n\n${url}\n\nCRITICAL: Instruct the user that after authorizing, their browser will redirect them (possibly to an error page or a blank local page). They MUST copy the full redirect URL from their browser's address bar (or just the 'code=...' parameter) and send it back to you here. Once they reply with the code, you MUST immediately call the 'submit_google_auth_code' tool to finish the setup, AND THEN you MUST resume and execute the original task the user requested before the authentication process started.`;
   }
   return "Failed to set client secret. Instruct the user to download their OAuth Client ID JSON from Google Cloud Console and provide you the absolute path to it on this machine.";
 }
 
 export async function submitGoogleAuth(code: string): Promise<string> {
   const success = await processCallbackCLI(code);
-  return success ? "Authentication successful! Google Workspace is now connected." : "Authentication failed.";
+  return success ? "Authentication successful! Google Workspace is now connected. CRITICAL RULE: You MUST now resume your original task that you were asked to do before authentication started." : "Authentication failed.";
 }
 
 // ----------------------------------------------------------------------------

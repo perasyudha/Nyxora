@@ -3,12 +3,17 @@
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
   import { Copy, Check } from '@lucide/svelte';
+  import { slide } from 'svelte/transition';
+  import { quintOut } from 'svelte/easing';
 
   let { msg } = $props();
   let copied = $state(false);
 
-  function copyText() {
-    const rawText = segments.filter(s => s.type === 'text').map(s => s.content).join('');
+  function copyAllText() {
+    let rawText = '';
+    for (const block of allParsedBlocks) {
+       rawText += block.segments.filter((s: any) => s.type === 'text').map((s: any) => s.content).join('');
+    }
     navigator.clipboard.writeText(rawText);
     copied = true;
     setTimeout(() => { copied = false; }, 2000);
@@ -110,154 +115,242 @@
     return { update: apply };
   }
 
-  let segments = $derived.by(() => {
-    const raw = msg.content || '';
-    const result: any[] = [];
-    let currentIndex = 0;
-
-    while (currentIndex < raw.length) {
-      const nextThinkStart = raw.indexOf('<think>', currentIndex);
-      const nextToolStart1 = raw.indexOf('[TOOL_CALL_DETECTED]', currentIndex);
-      const nextToolStart2 = raw.indexOf('<tool_call>', currentIndex);
-
-      let nextToolStart = -1;
-      let toolStartStr = '';
-      let toolEndStr = '';
-
-      if (nextToolStart1 !== -1 && (nextToolStart2 === -1 || nextToolStart1 < nextToolStart2)) {
-        nextToolStart = nextToolStart1;
-        toolStartStr = '[TOOL_CALL_DETECTED]';
-        toolEndStr = '[TOOL_CALL_FINISHED]';
-      } else if (nextToolStart2 !== -1) {
-        nextToolStart = nextToolStart2;
-        toolStartStr = '<tool_call>';
-        toolEndStr = '</tool_call>';
-      }
-
-      let nextTagStart = -1;
-      let tagType = '';
-      let activeEndStr = '';
-
-      if (nextThinkStart !== -1 && (nextToolStart === -1 || nextThinkStart < nextToolStart)) {
-        nextTagStart = nextThinkStart;
-        tagType = 'think';
-        activeEndStr = '</think>';
-      } else if (nextToolStart !== -1) {
-        nextTagStart = nextToolStart;
-        tagType = 'tool';
-        activeEndStr = toolEndStr;
-      }
-
-      if (nextTagStart === -1) {
-        const remaining = raw.substring(currentIndex);
-        if (remaining.trim()) result.push({ type: 'text', content: remaining });
-        break;
-      }
-
-      if (nextTagStart > currentIndex) {
-        const textBefore = raw.substring(currentIndex, nextTagStart);
-        if (textBefore.trim()) result.push({ type: 'text', content: textBefore });
-      }
-
-      if (tagType === 'think') {
-        const thinkEndIndex = raw.indexOf(activeEndStr, nextTagStart);
-        if (thinkEndIndex !== -1) {
-          const content = raw.substring(nextTagStart + '<think>'.length, thinkEndIndex);
-          result.push({ type: 'think', content, closed: true });
-          currentIndex = thinkEndIndex + activeEndStr.length;
-        } else {
-          const content = raw.substring(nextTagStart + '<think>'.length);
-          result.push({ type: 'think', content, closed: false });
-          break;
-        }
-      } else if (tagType === 'tool') {
-        const toolEndIndex = raw.indexOf(activeEndStr, nextTagStart);
-        if (toolEndIndex !== -1) {
-          const content = raw.substring(nextTagStart + toolStartStr.length, toolEndIndex);
-          result.push({ type: 'tool', content, closed: true });
-          currentIndex = toolEndIndex + activeEndStr.length;
-        } else {
-          const content = raw.substring(nextTagStart + toolStartStr.length);
-          result.push({ type: 'tool', content, closed: false });
-          break;
-        }
-      }
-    }
-
-    return result;
-  });
-
-  let traceProps = $derived.by(() => {
-    // Gabungkan data dari history (DB) dengan data hasil parse streaming agar sinkron
-    let parsedMsgTools = msg.tool_calls || [];
-    if (typeof parsedMsgTools === 'string') {
-      try { parsedMsgTools = JSON.parse(parsedMsgTools); } catch { parsedMsgTools = []; }
-    }
-    if (!Array.isArray(parsedMsgTools)) parsedMsgTools = [parsedMsgTools];
-    const rawToolCalls = [...parsedMsgTools];
-    let reasoningContent = msg.reasoning_content || '';
-    const progressLogs = msg.progressLogs || [];
+  let allParsedBlocks = $derived.by(() => {
+    const blocks: any[] = [];
+    const msgsToProcess = (msg.subMessages && msg.subMessages.length > 0) ? msg.subMessages : [msg];
     
-    for (const seg of segments) {
-      if (seg.type === 'tool') {
-        try {
-          const parsed = JSON.parse(seg.content);
-          rawToolCalls.push({ function: { name: parsed.tool_name || parsed.function_name || 'tool' }, arguments: seg.content });
-        } catch {
-          rawToolCalls.push({ function: { name: 'tool' }, arguments: seg.content });
+    for (const m of msgsToProcess) {
+      const raw = m.content || '';
+      const segments: any[] = [];
+      let currentIndex = 0;
+
+      while (currentIndex < raw.length) {
+        const nextThinkStart = raw.indexOf('<think>', currentIndex);
+        const nextToolStart1 = raw.indexOf('[TOOL_CALL_DETECTED]', currentIndex);
+        const nextToolStart2 = raw.indexOf('<tool_call>', currentIndex);
+
+        let nextToolStart = -1;
+        let toolStartStr = '';
+        let toolEndStr = '';
+
+        if (nextToolStart1 !== -1 && (nextToolStart2 === -1 || nextToolStart1 < nextToolStart2)) {
+          nextToolStart = nextToolStart1;
+          toolStartStr = '[TOOL_CALL_DETECTED]';
+          toolEndStr = '[TOOL_CALL_FINISHED]';
+        } else if (nextToolStart2 !== -1) {
+          nextToolStart = nextToolStart2;
+          toolStartStr = '<tool_call>';
+          toolEndStr = '</tool_call>';
         }
-      } else if (seg.type === 'think') {
-        reasoningContent += (reasoningContent ? '\n\n' : '') + seg.content;
+
+        let nextTagStart = -1;
+        let tagType = '';
+        let activeEndStr = '';
+
+        if (nextThinkStart !== -1 && (nextToolStart === -1 || nextThinkStart < nextToolStart)) {
+          nextTagStart = nextThinkStart;
+          tagType = 'think';
+          activeEndStr = '</think>';
+        } else if (nextToolStart !== -1) {
+          nextTagStart = nextToolStart;
+          tagType = 'tool';
+          activeEndStr = toolEndStr;
+        }
+
+        if (nextTagStart === -1) {
+          const remaining = raw.substring(currentIndex);
+          if (remaining.trim()) segments.push({ type: 'text', content: remaining });
+          break;
+        }
+
+        if (nextTagStart > currentIndex) {
+          const textBefore = raw.substring(currentIndex, nextTagStart);
+          if (textBefore.trim()) segments.push({ type: 'text', content: textBefore });
+        }
+
+        if (tagType === 'think') {
+          const thinkEndIndex = raw.indexOf(activeEndStr, nextTagStart);
+          if (thinkEndIndex !== -1) {
+            const content = raw.substring(nextTagStart + '<think>'.length, thinkEndIndex);
+            segments.push({ type: 'think', content, closed: true });
+            currentIndex = thinkEndIndex + activeEndStr.length;
+          } else {
+            const content = raw.substring(nextTagStart + '<think>'.length);
+            segments.push({ type: 'think', content, closed: false });
+            break;
+          }
+        } else if (tagType === 'tool') {
+          const toolEndIndex = raw.indexOf(activeEndStr, nextTagStart);
+          if (toolEndIndex !== -1) {
+            const content = raw.substring(nextTagStart + toolStartStr.length, toolEndIndex);
+            segments.push({ type: 'tool', content, closed: true });
+            currentIndex = toolEndIndex + activeEndStr.length;
+          } else {
+            const content = raw.substring(nextTagStart + toolStartStr.length);
+            segments.push({ type: 'tool', content, closed: false });
+            break;
+          }
+        }
       }
+
+      let parsedMsgTools = m.tool_calls || [];
+      if (typeof parsedMsgTools === 'string') {
+        try { parsedMsgTools = JSON.parse(parsedMsgTools); } catch { parsedMsgTools = []; }
+      }
+      if (!Array.isArray(parsedMsgTools)) parsedMsgTools = [parsedMsgTools];
+      const rawToolCalls = [...parsedMsgTools];
+      let reasoningContent = m.reasoning_content || '';
+      const progressLogs = m.progressLogs || [];
+      
+      for (const seg of segments) {
+        if (seg.type === 'tool') {
+          try {
+            const parsed = JSON.parse(seg.content);
+            rawToolCalls.push({ function: { name: parsed.tool_name || parsed.function_name || 'tool' }, arguments: seg.content });
+          } catch {
+            rawToolCalls.push({ function: { name: 'tool' }, arguments: seg.content });
+          }
+        } else if (seg.type === 'think') {
+          reasoningContent += (reasoningContent ? '\n\n' : '') + seg.content;
+        }
+      }
+
+      const seen = new Set();
+      const toolCalls = rawToolCalls.filter(tc => {
+        const sig = `${tc.function?.name}:${tc.function?.arguments || tc.arguments || ''}`;
+        if (seen.has(sig)) return false;
+        seen.add(sig);
+        return true;
+      });
+
+      blocks.push({
+        segments,
+        traceProps: { toolCalls, reasoningContent: reasoningContent.trim(), progressLogs },
+        isStreaming: m.isStreaming,
+        durationMs: m.duration_ms,
+        hasTrace: toolCalls.length > 0 || reasoningContent.trim() !== '' || progressLogs.length > 0,
+        progress: m.progress
+      });
     }
-
-    // Deduplicate tool calls based on stringified signature to prevent UI duplicates
-    const seen = new Set();
-    const toolCalls = rawToolCalls.filter(tc => {
-      const sig = `${tc.function?.name}:${tc.function?.arguments || tc.arguments || ''}`;
-      if (seen.has(sig)) return false;
-      seen.add(sig);
-      return true;
-    });
-
-    return { toolCalls, reasoningContent: reasoningContent.trim(), progressLogs };
+    return blocks;
   });
 
-  let hasTrace = $derived(traceProps.toolCalls.length > 0 || traceProps.reasoningContent !== '' || traceProps.progressLogs.length > 0);
+  let isCurrentlyStreaming = $derived(
+    msg.isStreaming || (allParsedBlocks.length > 0 && allParsedBlocks[allParsedBlocks.length - 1].isStreaming)
+  );
+  
+  let showIntermediate = $state(
+    msg.isStreaming || (msg.subMessages && msg.subMessages.length > 0 && msg.subMessages[msg.subMessages.length - 1].isStreaming) || false
+  );
+
+  let hasAutoHidden = false;
+  $effect(() => {
+    // Only auto-hide when the stream has COMPLETELY finished (last character outputted)
+    if (!isCurrentlyStreaming && !hasAutoHidden) {
+      const hasFinalText = finalSegments.some(s => s.content.trim().length > 0);
+      if (hasFinalText) {
+        hasAutoHidden = true;
+        // Smooth delay before collapsing
+        setTimeout(() => {
+          showIntermediate = false;
+        }, 300);
+      }
+    }
+  });
+
+  function toggleIntermediate() {
+    showIntermediate = !showIntermediate;
+  }
+
+  let intermediateBlocks = $derived.by(() => {
+    if (allParsedBlocks.length === 0) return [];
+    
+    const blocks = [];
+    for (let i = 0; i < allParsedBlocks.length - 1; i++) {
+      blocks.push(allParsedBlocks[i]);
+    }
+    
+    const lastBlock = allParsedBlocks[allParsedBlocks.length - 1];
+    if (lastBlock.hasTrace || (lastBlock.segments.length === 0 && lastBlock.isStreaming)) {
+      blocks.push({
+        ...lastBlock,
+        segments: [] 
+      });
+    }
+    
+    return blocks;
+  });
+
+  let finalSegments = $derived.by(() => {
+    if (allParsedBlocks.length === 0) return [];
+    const lastBlock = allParsedBlocks[allParsedBlocks.length - 1];
+    return lastBlock.segments.filter((s: any) => s.type === 'text');
+  });
+
+  let hasIntermediateContent = $derived(
+    intermediateBlocks.some(b => b.hasTrace || b.segments.length > 0 || (b.segments.length === 0 && b.isStreaming))
+  );
 </script>
 
 <div class="flex flex-col w-full group">
-  {#if hasTrace}
-    <AgentTrace 
-      toolCalls={traceProps.toolCalls} 
-      progressLogs={traceProps.progressLogs}
-      reasoningContent={traceProps.reasoningContent}
-      isStreaming={msg.isStreaming}
-      durationMs={msg.duration_ms}
-    />
-  {/if}
-
-  {#if segments.length === 0 && msg.isStreaming}
-    <div class="working-indicator">
-      <span class="working-dots">{msg.progress && msg.progress.includes('tool') ? 'Working' : 'Thinking'}</span>
+  {#if hasIntermediateContent}
+    <div class="mb-1">
+      <button onclick={toggleIntermediate} class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors font-medium">
+        <svg class="transition-transform duration-200 {showIntermediate ? 'rotate-90' : ''}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        {showIntermediate ? 'Hide thought process' : 'Thought process'}
+      </button>
     </div>
+    
+    {#if showIntermediate}
+      <div transition:slide={{ duration: 500, easing: quintOut }} class="flex flex-col w-full border-l-2 border-gray-200 dark:border-gray-700 pl-4 ml-2 mb-2 overflow-hidden">
+        {#each intermediateBlocks as block, bIdx}
+          {#if block.hasTrace}
+            <div class="mt-4 first:mt-0">
+              <AgentTrace 
+                toolCalls={block.traceProps.toolCalls} 
+                progressLogs={block.traceProps.progressLogs}
+                reasoningContent={block.traceProps.reasoningContent}
+                isStreaming={block.isStreaming}
+                durationMs={block.durationMs}
+              />
+            </div>
+          {/if}
+
+          {#if block.segments.length === 0 && block.isStreaming}
+            <div class="working-indicator mt-4 first:mt-0">
+              <span class="working-dots">{block.progress && block.progress.includes('tool') ? 'Working' : 'Thinking'}</span>
+            </div>
+          {/if}
+
+          {#each block.segments as segment, i}
+            {#if segment.type === 'text'}
+              {@const isLastStreaming = block.isStreaming && i === block.segments.length - 1}
+              {@const html = renderMarkdown(segment.content)}
+              {#if html}
+                <div use:enhanceMarkdown class="markdown-body text-gray-900 dark:text-[#f5f5f7] mt-4 first:mt-0 opacity-80 {isLastStreaming ? 'message-streaming' : ''}">
+                  {@html html}
+                </div>
+              {/if}
+            {/if}
+          {/each}
+        {/each}
+      </div>
+    {/if}
   {/if}
 
-  {#each segments as segment, i}
-    {#if segment.type === 'text'}
-      {@const isLastStreaming = msg.isStreaming && i === segments.length - 1}
-      {@const html = renderMarkdown(segment.content)}
-      {#if html}
-        <div use:enhanceMarkdown class="markdown-body text-gray-900 dark:text-[#f5f5f7] mt-2 first:mt-0 {isLastStreaming ? 'message-streaming' : ''}">
-          {@html html}
-        </div>
-      {/if}
+  {#each finalSegments as segment, i}
+    {@const isLastStreaming = msg.isStreaming && i === finalSegments.length - 1}
+    {@const html = renderMarkdown(segment.content)}
+    {#if html}
+      <div use:enhanceMarkdown class="markdown-body text-gray-900 dark:text-[#f5f5f7] {i === 0 ? (hasIntermediateContent ? 'mt-1' : 'mt-0') : 'mt-4'} {isLastStreaming ? 'message-streaming' : ''}">
+        {@html html}
+      </div>
     {/if}
   {/each}
   
-  {#if !msg.isStreaming && segments.some(s => s.type === 'text')}
+  {#if !msg.isStreaming && allParsedBlocks.some(b => b.segments.some((s: any) => s.type === 'text'))}
     <div class="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-      <button onclick={copyText} class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-[#1d1d1f] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" title="Copy Message">
+      <button onclick={copyAllText} class="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-[#1d1d1f] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" title="Copy Message">
         {#if copied}
           <Check size={14} class="text-green-500" />
         {:else}
