@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Square, Settings as SettingsIcon, Brain, Cpu, MessageSquare, Plus, Trash2, Code, Shield, Network, Terminal, RefreshCw, Send, Image as ImageIcon, Sparkles, Edit2, Zap, ArrowRight, Wallet, Check, AlertTriangle, Bot, Activity, Database, Mic, Copy, Search, LayoutDashboard, Key, Server, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Paperclip, Loader2, BookOpen, Folder, Clock, Plug, Link, User, Landmark, LineChart, TrendingUp, Router, Share2, Pencil, X } from 'lucide-react';
+import { Play, Square, Settings as SettingsIcon, Brain, Cpu, MessageSquare, Plus, Trash2, Code, Shield, Network, Terminal, RefreshCw, Send, Image as ImageIcon, Sparkles, Edit2, Zap, ArrowRight, Wallet, Check, AlertTriangle, Bot, Activity, Database, Mic, Copy, Search, LayoutDashboard, Key, Server, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Paperclip, Loader2, BookOpen, Folder, Clock, Plug, Link, User, Landmark, LineChart, TrendingUp, Router, Share2, Pencil, X, Menu } from 'lucide-react';
 
 import NyxoraLogo from './NyxoraLogo';
 import { NetworkSelector } from './NetworkSelector';
@@ -57,6 +57,12 @@ function App() {
   // Theme State
   const [theme, setTheme] = useState<'dark' | 'light' | 'auto'>(() => (localStorage.getItem('nyxora_theme') as 'dark' | 'light' | 'auto') || 'auto');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => localStorage.getItem('nyxora_sidebar_collapsed') === 'true');
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const handleNavClick = (view: typeof currentView) => {
+    setCurrentView(view);
+    setIsMobileOpen(false);
+  };
 
 
 
@@ -202,7 +208,11 @@ function App() {
     <>
       <ReconnectOverlay />
       
-      <aside className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+      {isMobileOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsMobileOpen(false)} />
+      )}
+
+      <aside className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header" style={{ padding: '24px 16px', paddingBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'space-between', width: '100%' }}>
             {!isSidebarCollapsed && (
@@ -250,79 +260,79 @@ function App() {
 
 
 
-              <div className={`nav-item ${currentView === 'sessions' ? 'active' : ''}`} onClick={() => setCurrentView('sessions')} title={isSidebarCollapsed ? "SESSIONS" : undefined}>
+              <div className={`nav-item ${currentView === 'sessions' ? 'active' : ''}`} onClick={() => handleNavClick('sessions')} title={isSidebarCollapsed ? "SESSIONS" : undefined}>
                 <MessageSquare size={16} /> {!isSidebarCollapsed && "SESSIONS"}
               </div>
 
 
-              <div className={`nav-item ${currentView === 'models' ? 'active' : ''}`} onClick={() => setCurrentView('models')} title={isSidebarCollapsed ? "MODELS" : undefined}>
+              <div className={`nav-item ${currentView === 'models' ? 'active' : ''}`} onClick={() => handleNavClick('models')} title={isSidebarCollapsed ? "MODELS" : undefined}>
                 <Cpu size={16} /> {!isSidebarCollapsed && "MODELS"}
               </div>
-              <div className={`nav-item ${currentView === 'skills' ? 'active' : ''}`} onClick={() => setCurrentView('skills')} title={isSidebarCollapsed ? "SKILLS" : undefined}>
+              <div className={`nav-item ${currentView === 'skills' ? 'active' : ''}`} onClick={() => handleNavClick('skills')} title={isSidebarCollapsed ? "SKILLS" : undefined}>
                 <Code size={16} /> {!isSidebarCollapsed && "SKILLS"}
               </div>
-              <div className={`nav-item ${currentView === 'memory' ? 'active' : ''}`} onClick={() => setCurrentView('memory')} title={isSidebarCollapsed ? "MEMORY" : undefined}>
+              <div className={`nav-item ${currentView === 'memory' ? 'active' : ''}`} onClick={() => handleNavClick('memory')} title={isSidebarCollapsed ? "MEMORY" : undefined}>
                 <Brain size={16} /> {!isSidebarCollapsed && "MEMORY"}
               </div>
-              <div className={`nav-item ${currentView === 'security' ? 'active' : ''}`} onClick={() => setCurrentView('security')} title={isSidebarCollapsed ? "SECURITY" : undefined}>
+              <div className={`nav-item ${currentView === 'security' ? 'active' : ''}`} onClick={() => handleNavClick('security')} title={isSidebarCollapsed ? "SECURITY" : undefined}>
                 <Shield size={16} /> {!isSidebarCollapsed && "SECURITY"}
               </div>
-              <div className={`nav-item ${currentView === 'cron' ? 'active' : ''}`} onClick={() => setCurrentView('cron')} title={isSidebarCollapsed ? "CRON" : undefined}>
+              <div className={`nav-item ${currentView === 'cron' ? 'active' : ''}`} onClick={() => handleNavClick('cron')} title={isSidebarCollapsed ? "CRON" : undefined}>
                 <Clock size={16} /> {!isSidebarCollapsed && "CRON"}
               </div>
-              <div className={`nav-item ${currentView === 'workflows' ? 'active' : ''}`} onClick={() => setCurrentView('workflows')} title={isSidebarCollapsed ? "WORKFLOWS" : undefined}>
+              <div className={`nav-item ${currentView === 'workflows' ? 'active' : ''}`} onClick={() => handleNavClick('workflows')} title={isSidebarCollapsed ? "WORKFLOWS" : undefined}>
                 <Zap size={16} /> {!isSidebarCollapsed && "WORKFLOWS"}
               </div>
-              <div className={`nav-item ${currentView === 'osterminal' ? 'active' : ''}`} onClick={() => setCurrentView('osterminal')} title={isSidebarCollapsed ? "OS TERMINAL" : undefined}>
+              <div className={`nav-item ${currentView === 'osterminal' ? 'active' : ''}`} onClick={() => handleNavClick('osterminal')} title={isSidebarCollapsed ? "OS TERMINAL" : undefined}>
                 <Terminal size={16} /> {!isSidebarCollapsed && "OS TERMINAL"}
               </div>
               
               {!isSidebarCollapsed && <div className="nav-section-title" style={{ marginTop: '20px', marginBottom: '8px', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-secondary)', paddingLeft: '12px', textTransform: 'uppercase' }}>WEB3 & ASSETS</div>}
               
-              <div className={`nav-item ${currentView === 'wallets' ? 'active' : ''}`} onClick={() => setCurrentView('wallets')} title={isSidebarCollapsed ? "WALLETS" : undefined}>
+              <div className={`nav-item ${currentView === 'wallets' ? 'active' : ''}`} onClick={() => handleNavClick('wallets')} title={isSidebarCollapsed ? "WALLETS" : undefined}>
                 <Wallet size={16} /> {!isSidebarCollapsed && "WALLETS"}
               </div>
-              <div className={`nav-item ${currentView === 'rpcconfig' ? 'active' : ''}`} onClick={() => setCurrentView('rpcconfig')} title={isSidebarCollapsed ? "RPC Config" : undefined}>
+              <div className={`nav-item ${currentView === 'rpcconfig' ? 'active' : ''}`} onClick={() => handleNavClick('rpcconfig')} title={isSidebarCollapsed ? "RPC Config" : undefined}>
                 <Cpu size={16} /> {!isSidebarCollapsed && "RPC Config"}
               </div>
-              <div className={`nav-item ${currentView === 'deficonfig' ? 'active' : ''}`} onClick={() => setCurrentView('deficonfig')} title={isSidebarCollapsed ? "DeFi Config" : undefined}>
+              <div className={`nav-item ${currentView === 'deficonfig' ? 'active' : ''}`} onClick={() => handleNavClick('deficonfig')} title={isSidebarCollapsed ? "DeFi Config" : undefined}>
                 <Landmark size={16} /> {!isSidebarCollapsed && "DeFi Config"}
               </div>
-              <div className={`nav-item ${currentView === 'marketoracles' ? 'active' : ''}`} onClick={() => setCurrentView('marketoracles')} title={isSidebarCollapsed ? "Market Oracles" : undefined}>
+              <div className={`nav-item ${currentView === 'marketoracles' ? 'active' : ''}`} onClick={() => handleNavClick('marketoracles')} title={isSidebarCollapsed ? "Market Oracles" : undefined}>
                 <TrendingUp size={16} /> {!isSidebarCollapsed && "Market Oracles"}
               </div>
 
               {!isSidebarCollapsed && <div className="nav-section-title" style={{ marginTop: '20px', marginBottom: '8px', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-secondary)', paddingLeft: '12px' }}>SYSTEM & INTEGRATION</div>}
 
-              <div className={`nav-item ${currentView === 'hardware' ? 'active' : ''}`} onClick={() => setCurrentView('hardware')} title={isSidebarCollapsed ? "HARDWARE" : undefined}>
+              <div className={`nav-item ${currentView === 'hardware' ? 'active' : ''}`} onClick={() => handleNavClick('hardware')} title={isSidebarCollapsed ? "HARDWARE" : undefined}>
                 <Monitor size={16} /> {!isSidebarCollapsed && "HARDWARE"}
               </div>
 
-              <div className={`nav-item ${currentView === 'gateway' ? 'active' : ''}`} onClick={() => setCurrentView('gateway')} title={isSidebarCollapsed ? "GATEWAY" : undefined}>
+              <div className={`nav-item ${currentView === 'gateway' ? 'active' : ''}`} onClick={() => handleNavClick('gateway')} title={isSidebarCollapsed ? "GATEWAY" : undefined}>
                 <Router size={16} /> {!isSidebarCollapsed && "GATEWAY"}
               </div>
-              <div className={`nav-item ${currentView === 'plugins' ? 'active' : ''}`} onClick={() => setCurrentView('plugins')} title={isSidebarCollapsed ? "PLUGINS" : undefined}>
+              <div className={`nav-item ${currentView === 'plugins' ? 'active' : ''}`} onClick={() => handleNavClick('plugins')} title={isSidebarCollapsed ? "PLUGINS" : undefined}>
                 <Plug size={16} /> {!isSidebarCollapsed && "PLUGINS"}
               </div>
-              <div className={`nav-item ${currentView === 'websearch' ? 'active' : ''}`} onClick={() => setCurrentView('websearch')} title={isSidebarCollapsed ? "WEB SEARCH" : undefined}>
+              <div className={`nav-item ${currentView === 'websearch' ? 'active' : ''}`} onClick={() => handleNavClick('websearch')} title={isSidebarCollapsed ? "WEB SEARCH" : undefined}>
                 <Search size={16} /> {!isSidebarCollapsed && "WEB SEARCH"}
               </div>
-              <div className={`nav-item ${currentView === 'mcp' ? 'active' : ''}`} onClick={() => setCurrentView('mcp')} title={isSidebarCollapsed ? "MCP" : undefined}>
+              <div className={`nav-item ${currentView === 'mcp' ? 'active' : ''}`} onClick={() => handleNavClick('mcp')} title={isSidebarCollapsed ? "MCP" : undefined}>
                 <Server size={16} /> {!isSidebarCollapsed && "MCP"}
               </div>
-              <div className={`nav-item ${currentView === 'webhooks' ? 'active' : ''}`} onClick={() => setCurrentView('webhooks')} title={isSidebarCollapsed ? "WEBHOOKS" : undefined}>
+              <div className={`nav-item ${currentView === 'webhooks' ? 'active' : ''}`} onClick={() => handleNavClick('webhooks')} title={isSidebarCollapsed ? "WEBHOOKS" : undefined}>
                 <Network size={16} /> {!isSidebarCollapsed && "WEBHOOKS"}
               </div>
-              <div className={`nav-item ${currentView === 'pairing' ? 'active' : ''}`} onClick={() => setCurrentView('pairing')} title={isSidebarCollapsed ? "PAIRING" : undefined}>
+              <div className={`nav-item ${currentView === 'pairing' ? 'active' : ''}`} onClick={() => handleNavClick('pairing')} title={isSidebarCollapsed ? "PAIRING" : undefined}>
                 <Link size={16} /> {!isSidebarCollapsed && "PAIRING"}
               </div>
-              <div className={`nav-item ${currentView === 'profiles' ? 'active' : ''}`} onClick={() => setCurrentView('profiles')} title={isSidebarCollapsed ? "PROFILES" : undefined}>
+              <div className={`nav-item ${currentView === 'profiles' ? 'active' : ''}`} onClick={() => handleNavClick('profiles')} title={isSidebarCollapsed ? "PROFILES" : undefined}>
                 <User size={16} /> {!isSidebarCollapsed && "PROFILES"}
               </div>
-              <div className={`nav-item ${currentView === 'logs' ? 'active' : ''}`} onClick={() => setCurrentView('logs')} title={isSidebarCollapsed ? "LOGS" : undefined}>
+              <div className={`nav-item ${currentView === 'logs' ? 'active' : ''}`} onClick={() => handleNavClick('logs')} title={isSidebarCollapsed ? "LOGS" : undefined}>
                 <Activity size={16} /> {!isSidebarCollapsed && "LOGS"}
               </div>
-              <div className={`nav-item ${currentView === 'system' ? 'active' : ''}`} onClick={() => setCurrentView('system')} title={isSidebarCollapsed ? "SYSTEM" : undefined}>
+              <div className={`nav-item ${currentView === 'system' ? 'active' : ''}`} onClick={() => handleNavClick('system')} title={isSidebarCollapsed ? "SYSTEM" : undefined}>
                 <SettingsIcon size={16} /> {!isSidebarCollapsed && "SYSTEM"}
               </div>
             </div>
@@ -335,6 +345,13 @@ function App() {
       <main className="main-content">
         <header className="topbar">
           <div className="topbar-left">
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setIsMobileOpen(!isMobileOpen)}
+              title="Toggle Menu"
+            >
+              <Menu size={18} />
+            </button>
             <span>Nyxora</span>
             <span style={{color: '#3b82f6'}}>•</span>
             <span style={{color: 'var(--text-primary)', textTransform: 'capitalize'}}>
