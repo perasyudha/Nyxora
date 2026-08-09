@@ -193,4 +193,11 @@ export class NyxoraSigner {
       }).catch(reject);
     });
   }
+
+  public async signPersonalMessage(message: string): Promise<string> {
+    if (!this.account || !this.vaultPrivateKey) {
+      throw new Error('Vault is locked. Unlock first.');
+    }
+    return await this.account.signMessage({ message });
+  }
 }

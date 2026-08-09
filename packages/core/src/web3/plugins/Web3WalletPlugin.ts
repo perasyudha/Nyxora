@@ -6,11 +6,17 @@ import { getMyAddressToolDefinition, getMyAddress } from '../skills/getMyAddress
 import { manageCustomTokensDefinition, executeManageCustomTokens } from '../skills/manageCustomTokens';
 import { getTxHistoryToolDefinition, getTxHistory } from '../skills/getTxHistory';
 import { transferToolDefinition, prepareTransfer } from '../skills/transfer';
+import {
+  registerCustomChainDefinition, executeRegisterCustomChain,
+  signSiweChallengeDefinition, executeSignSiweChallenge,
+  executeSocialQuestDefinition, executeSocialQuest,
+  executeAirdropPlaybookDefinition, executeAirdropPlaybook
+} from '../skills/airdropSkills';
 
 export class Web3WalletPlugin implements Plugin {
   public name = 'Web3WalletPlugin';
-  public description = 'Core wallet and transaction operations including transfer, custom tx, and history.';
-  public version = '1.0.1';
+  public description = 'Core wallet and transaction operations including transfer, custom tx, history, custom chain registration, and SIWE.';
+  public version = '1.1.0';
 
   public tools = [
     transferToolDefinition,
@@ -19,7 +25,11 @@ export class Web3WalletPlugin implements Plugin {
     checkAddressToolDefinition,
     getMyAddressToolDefinition,
     manageCustomTokensDefinition,
-    getTxHistoryToolDefinition
+    getTxHistoryToolDefinition,
+    registerCustomChainDefinition,
+    signSiweChallengeDefinition,
+    executeSocialQuestDefinition,
+    executeAirdropPlaybookDefinition
   ];
 
   public handlers = {
@@ -46,6 +56,18 @@ export class Web3WalletPlugin implements Plugin {
     },
     [getTxHistoryToolDefinition.function.name]: async (args: any) => {
       return await getTxHistory(args.chainName, args.address, args.days);
+    },
+    [registerCustomChainDefinition.function.name]: async (args: any) => {
+      return await executeRegisterCustomChain(args);
+    },
+    [signSiweChallengeDefinition.function.name]: async (args: any) => {
+      return await executeSignSiweChallenge(args);
+    },
+    [executeSocialQuestDefinition.function.name]: async (args: any) => {
+      return await executeSocialQuest(args);
+    },
+    [executeAirdropPlaybookDefinition.function.name]: async (args: any) => {
+      return await executeAirdropPlaybook(args);
     }
   };
 }

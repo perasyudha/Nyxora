@@ -2,7 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+## [26.8.9]
+
+### Autonomous Web3 & Airdrop Hunter System
+- **Virtual EIP-1193 Provider & SIWE Signing (`eip1193Provider.ts`, `siweHandler.ts`)**: Built a native EIP-1193 virtual provider (`window.ethereum` injector) for Playwright browser session automation and automated EIP-4361 Sign-In with Ethereum challenge signing directly via Nyxora Keyring Vault.
+- **Dynamic Chain & Manual Testnet Manager (`chainRegistry.ts`)**: Replaced static chain dictionary with a dynamic chain registry supporting manual registration of custom testnets, RPC URLs, chain IDs, native symbols, and explorers (`register_custom_chain`).
+- **Universal ABI Resolver (`abiResolver.ts`)**: Automated smart contract ABI fetching from Block Explorers (Etherscan/Basescan/Blockscout/Sourcify) and manual ABI injection (`registerManualAbi`) for unverified testnet smart contracts.
+- **Custom Quest Perception Engine (`webPerceptor.ts`)**: Intercepts `fetch`/`XHR` network traffic on custom developer quest platforms, automatically discovering authentication, task verification, and reward claim API endpoints.
+- **Hybrid Social Quest Automation (`socialAutomation.ts`)**: Integrated hybrid social task execution (X/Twitter, Discord, Telegram) supporting both Official API (OAuth2) and Headless Browser Session automation.
+- **Airdrop Playbook DAG Generator & Executor (`playbookParser.ts`, `playbookExecutor.ts`)**: Converts natural language airdrop guides into executable Directed Acyclic Graphs (DAGs) and executes multi-step quest workflows (`execute_airdrop_playbook`).
+- **Anti-Sybil Engine (`antiSybilEngine.ts`)**: Added randomized delay jitter and transaction amount randomization to mimic natural human behavior.
+- **Agent Skill & Plugin Integration (`airdropSkills.ts`, `Web3WalletPlugin.ts`)**: Exposed 4 new Web3 skills (`register_custom_chain`, `sign_siwe_challenge`, `execute_social_quest`, `execute_airdrop_playbook`) to Nyxora's core Agent OS.
+
+### Desktop UI & Streaming Fixes
+- **Live Multi-Turn Trace Display (`ChatComposer.svelte`, `MessageList.svelte`)**: Fixed multi-turn agent streaming to track turn metadata (`reasoning_content`, `progressLogs`, `duration_ms`) live per turn, restoring instant "Thought process" accordion visibility without requiring a page refresh.
+- **DOM Flickering & Separator Cleanup**: Cleaned up duplicate `---` separator accumulation during typewriter streaming and fixed `MessageList.svelte` to preserve `subMessages` for smooth DOM rendering.
 
 ## [26.8.6]
 

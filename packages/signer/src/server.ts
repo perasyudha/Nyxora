@@ -86,6 +86,17 @@ app.post('/sign-transaction', async (req, res) => {
   }
 });
 
+app.post('/sign-message', async (req, res) => {
+  const { message } = req.body;
+  try {
+    const signature = await signer.signPersonalMessage(message);
+    res.json({ signature });
+  } catch (e: any) {
+    const status = e.message.includes('locked') ? 403 : 500;
+    res.status(status).json({ error: e.message });
+  }
+});
+
 if (!IS_WINDOWS && SOCKET_PATH && fs.existsSync(SOCKET_PATH)) {
   try {
     fs.unlinkSync(SOCKET_PATH);

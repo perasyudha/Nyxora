@@ -132,3 +132,42 @@ export async function submitTransaction(txPayload: any): Promise<string> {
   });
 }
 
+export async function signPersonalMessage(message: string): Promise<string> {
+  const token = getInternalToken();
+  return new Promise((resolve, reject) => {
+    const payloadBuffer = Buffer.from(JSON.stringify({ message }));
+    const options = getPolicyOptions('/sign-message', 'POST', token, {
+      'Content-Type': 'application/json',
+      'Content-Length': payloadBuffer.length
+    });
+
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (res.statusCode !== 200) {
+            reject(new Error(parsed.error || 'Failed to sign message'));
+            return;
+          }
+          resolve(parsed.signature);
+        } catch (e: any) {
+          reject(new Error(`Failed to parse vault signature response: ${e.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`Message signing failed: ${error.message}`));
+    });
+
+    req.setTimeout(15000, () => {
+      req.destroy(new Error('Timeout waiting for message signature'));
+    });
+
+    req.write(payloadBuffer);
+    req.end();
+  });
+}
+
