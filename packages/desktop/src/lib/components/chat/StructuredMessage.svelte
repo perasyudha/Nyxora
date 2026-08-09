@@ -69,9 +69,11 @@
 
   function renderMarkdown(text: string): string {
     let cleaned = text
-      .replace(/<think>[\s\S]*?<\/think>/gi, '')
-      .replace(/<tool_call>[\s\S]*?<\/tool_call>/gi, '')
+      .replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '')
+      .replace(/<tool_call>[\s\S]*?(?:<\/tool_call>|$)/gi, '')
       .replace(/\[TOOL_CALL_DETECTED\][\s\S]*?(\[TOOL_CALL_FINISHED\]|$)/g, '')
+      .replace(/<(?:t(?:h(?:i(?:n(?:k)?)?)?)?|t(?:o(?:o(?:l(?:_(?:c(?:a(?:l(?:l)?)?)?)?)?)?)?)?|)$/i, '')
+      .replace(/\[T(?:O(?:O(?:L(?:_(?:C(?:A(?:L(?:L(?:_(?:D(?:E(?:T(?:E(?:C(?:T(?:E(?:D)?)?)?)?)?)?)?)?)?)?)?)?)?)?)?)?)?$/i, '')
       .trim();
     if (!cleaned) return '';
     
