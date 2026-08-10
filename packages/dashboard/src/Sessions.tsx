@@ -298,7 +298,7 @@ export const Sessions: React.FC = () => {
     return () => observer.disconnect();
   }, [messages.length > 0]);
 
-  // Reset snap state when session is cleared
+  // Reset snap state when session is cleared, and force scroll on load
   useEffect(() => {
     if (messages.length === 0) {
       lastSnappedUserIndex.current = -1;
@@ -306,8 +306,16 @@ export const Sessions: React.FC = () => {
       snapPendingRef.current = false;
       isAutoScrolling.current = false;
       if (spacerDivRef.current) spacerDivRef.current.style.height = '0px';
+    } else {
+      setTimeout(() => {
+        if (chatContainerRef.current && !isUserScrolledUp.current) {
+          isAutoScrolling.current = true;
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+          setTimeout(() => { isAutoScrolling.current = false; }, 150);
+        }
+      }, 100);
     }
-  }, [messages.length]);
+  }, [activeSessionId, messages.length === 0]);
 
 
 
