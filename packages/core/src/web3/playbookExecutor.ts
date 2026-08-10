@@ -16,12 +16,16 @@ export class PlaybookExecutor {
    */
   public async executePlaybook(
     dag: PlaybookDAG,
-    onProgress?: (stepId: string, status: string, message: string) => void
+    onProgress?: (stepId: string, status: string, message: string) => void,
+    useAntiSybil: boolean = true
   ): Promise<StepExecutionResult[]> {
     console.log(`🚀 [PlaybookExecutor] Starting execution of Playbook: ${dag.name} (${dag.steps.length} steps)...`);
     const results: StepExecutionResult[] = [];
 
-    for (const step of dag.steps) {
+    // Apply Route Scrambling to independent steps to avoid linear execution traces
+    const stepsToExecute = useAntiSybil ? antiSybilEngine.scrambleRoute(dag.steps) : dag.steps;
+
+    for (const step of stepsToExecute) {
       console.log(`▶️ [PlaybookExecutor] Executing Step [${step.id}]: ${step.description}`);
       if (onProgress) onProgress(step.id, 'running', `Executing: ${step.description}`);
 

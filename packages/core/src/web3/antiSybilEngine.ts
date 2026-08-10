@@ -18,6 +18,19 @@ export class AntiSybilEngine {
     // Keep 6 decimal places
     return Math.floor(randomized * 1e6) / 1e6;
   }
+
+  /**
+   * Scrambles the execution order of a sequence of actions (route scrambling).
+   * Ensures that on-chain transaction footprint doesn't look like a linear bot script.
+   */
+  public scrambleRoute<T>(actions: T[]): T[] {
+    const scrambled = [...actions];
+    for (let i = scrambled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [scrambled[i], scrambled[j]] = [scrambled[j], scrambled[i]];
+    }
+    return scrambled;
+  }
 }
 
 export const antiSybilEngine = new AntiSybilEngine();

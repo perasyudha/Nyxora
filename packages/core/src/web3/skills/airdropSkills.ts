@@ -67,7 +67,8 @@ export const executeAirdropPlaybookDefinition = {
       type: 'object',
       properties: {
         guideText: { type: 'string', description: 'Text or markdown of the airdrop guide/steps' },
-        defaultChain: { type: 'string', description: 'Default blockchain for operations' }
+        defaultChain: { type: 'string', description: 'Default blockchain for operations' },
+        useAntiSybil: { type: 'boolean', description: 'Whether to apply randomized delays, jitters, and route scrambling (default true)' }
       },
       required: ['guideText']
     }
@@ -105,7 +106,8 @@ export async function executeSocialQuest(args: any): Promise<string> {
 
 export async function executeAirdropPlaybook(args: any): Promise<string> {
   const dag = AirdropPlaybookParser.parseGuideToDAG(args.guideText, args.defaultChain || 'base');
-  const results = await playbookExecutor.executePlaybook(dag);
+  const antiSybil = args.useAntiSybil !== undefined ? args.useAntiSybil : true;
+  const results = await playbookExecutor.executePlaybook(dag, undefined, antiSybil);
   const summary = results.map(r => `- Step ${r.stepId} (${r.status}): ${r.output || r.error}`).join('\n');
-  return `Completed Airdrop Playbook '${dag.name}':\n${summary}`;
+  return `Completed Airdrop Playbook '${dag.name}' (Anti-Sybil: ${antiSybil}):\n${summary}`;
 }

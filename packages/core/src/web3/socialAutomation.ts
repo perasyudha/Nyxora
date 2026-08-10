@@ -1,5 +1,5 @@
 export type SocialPlatform = 'twitter' | 'discord' | 'telegram';
-export type SocialAction = 'follow' | 'like' | 'retweet' | 'join_server' | 'join_channel' | 'verify_role';
+export type SocialAction = 'follow' | 'like' | 'retweet' | 'join_server' | 'join_channel' | 'verify_role' | 'read_timeline';
 
 export interface SocialTaskConfig {
   platform: SocialPlatform;
