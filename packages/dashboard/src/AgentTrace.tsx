@@ -19,12 +19,17 @@ export const AgentTrace: React.FC<AgentTraceProps> = ({ toolCalls = [], progress
   const [startTime] = useState<number>(Date.now());
   const [elapsedTime, setElapsedTime] = useState<number>(0);
 
-  // Auto expand when streaming starts
+  // Auto expand when streaming starts, auto collapse smoothly when streaming finishes
   useEffect(() => {
     if (isStreaming && (toolCalls.length > 0 || progressLogs.length > 0 || reasoningContent)) {
       setIsOpen(true);
+    } else if (!isStreaming) {
+      const timer = setTimeout(() => {
+        setIsOpen(false);
+      }, 400);
+      return () => clearTimeout(timer);
     }
-  }, [isStreaming, reasoningContent]);
+  }, [isStreaming]);
 
   // Track time if streaming
   useEffect(() => {
@@ -93,48 +98,64 @@ export const AgentTrace: React.FC<AgentTraceProps> = ({ toolCalls = [], progress
         <div className="agent-trace-summary" style={{ fontSize: '0.85rem', fontWeight: 500 }}>
           {getSummaryText()}
         </div>
-        <div className="agent-trace-chevron" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s', display: 'flex' }}>
+        <div className="agent-trace-chevron" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', display: 'flex' }}>
           <ChevronRight size={14} className="agent-trace-icon" />
         </div>
       </div>
       
-      {isOpen && (
-        <div className="agent-trace-body" style={{ marginTop: '8px', paddingLeft: '14px', marginLeft: '12px', display: 'flex', flexDirection: 'column', gap: '6px', borderLeft: '1.5px solid var(--border-color)', paddingBottom: '4px' }}>
-          {reasoningContent && (
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              <Cpu size={15} color="#f472b6" style={{ marginTop: '2px', flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>Thinking:</span>
-                <p 
-                  className="styled-scroll"
-                  style={{ 
-                    marginTop: '4px', 
-                    fontStyle: 'italic', 
-                    whiteSpace: 'pre-wrap', 
-                    lineHeight: 1.5,
-                    maxHeight: '150px',
-                    overflowY: 'auto',
-                    paddingRight: '8px'
-                  }}
-                >
-                  {reasoningContent}
-                </p>
-              </div>
+      <div 
+        className="agent-trace-body" 
+        style={{ 
+          maxHeight: isOpen ? '400px' : '0px', 
+          opacity: isOpen ? 1 : 0, 
+          marginTop: isOpen ? '8px' : '0px', 
+          paddingTop: isOpen ? '2px' : '0px',
+          paddingBottom: isOpen ? '4px' : '0px',
+          paddingLeft: '14px', 
+          marginLeft: '12px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '6px', 
+          borderLeft: '1.5px solid var(--border-color)', 
+          overflow: 'hidden',
+          transition: 'max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, margin-top 0.3s ease, padding 0.3s ease',
+          pointerEvents: isOpen ? 'auto' : 'none'
+        }}
+      >
+        {reasoningContent && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <Cpu size={15} color="#f472b6" style={{ marginTop: '2px', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>Thinking:</span>
+              <p 
+                className="styled-scroll"
+                style={{ 
+                  marginTop: '4px', 
+                  fontStyle: 'italic', 
+                  whiteSpace: 'pre-wrap', 
+                  lineHeight: 1.5,
+                  maxHeight: '150px',
+                  overflowY: 'auto',
+                  paddingRight: '8px'
+                }}
+              >
+                {reasoningContent}
+              </p>
             </div>
-          )}
-          {traces.map((trace, idx) => (
-            <div key={idx} className="trace-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-              {getIconForStep(trace)}
-              <span>{trace}</span>
-            </div>
-          ))}
-          {isStreaming && (
-            <div className="trace-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-              <span className="working-dots">Working</span>
-            </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+        {traces.map((trace, idx) => (
+          <div key={idx} className="trace-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+            {getIconForStep(trace)}
+            <span>{trace}</span>
+          </div>
+        ))}
+        {isStreaming && (
+          <div className="trace-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+            <span className="working-dots">Working</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

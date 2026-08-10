@@ -466,7 +466,7 @@ body.light-theme .sidebar-scroll-area::-webkit-scrollbar-thumb {
 .chat-wrapper {
   display: flex;
   flex-direction: column;
-  padding: 24px 0;
+  padding: 0;
   height: 100%;
 }
 
@@ -480,6 +480,14 @@ body.light-theme .sidebar-scroll-area::-webkit-scrollbar-thumb {
 }
 
 .empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  max-width: 600px;
+  margin: 0 auto;
   transition: all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
   max-height: 500px;
   opacity: 1;
@@ -487,9 +495,35 @@ body.light-theme .sidebar-scroll-area::-webkit-scrollbar-thumb {
 }
 
 .empty-state-container.hidden-state {
-  max-height: 0;
-  opacity: 0;
-  margin-bottom: 0 !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: none !important;
+}
+
+.empty-state-logo-wrapper {
+  background: radial-gradient(circle at center, rgba(34, 197, 94, 0.15) 0%, transparent 70%);
+  padding: 32px;
+  border-radius: 50%;
+  margin-bottom: 20px;
+}
+
+.empty-state-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.empty-state-desc {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  max-width: 500px;
+  line-height: 1.6;
+  margin: 0 auto;
 }
 
 .chat-container {
@@ -501,6 +535,19 @@ body.light-theme .sidebar-scroll-area::-webkit-scrollbar-thumb {
   display: flex;
   flex-direction: column;
   transition: all 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (min-width: 769px) {
+  .chat-container {
+    padding-top: 12px !important;
+  }
+  .chat-container > div {
+    margin-top: 0 !important;
+  }
+  .input-area {
+    padding: 10px 24px 28px 24px !important;
+    margin-top: -12px !important;
+  }
 }
 
 .chat-container.hidden-state {
@@ -721,12 +768,12 @@ body.light-theme .styled-scroll::-webkit-scrollbar-thumb:hover {
 
 .input-form {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
   background: var(--bg-secondary);
   border: 1px solid var(--glass-border);
   border-radius: 24px;
-  padding: 10px 14px;
+  padding: 6px 12px;
   transition: all 0.2s;
   width: 100%;
   max-width: 900px;
@@ -742,9 +789,10 @@ body.light-theme .styled-scroll::-webkit-scrollbar-thumb:hover {
   flex: 1;
   background: transparent;
   border: none;
-  padding: 8px 12px;
+  padding: 6px 8px;
   color: var(--text-primary);
   font-size: 0.95rem;
+  line-height: 1.4;
   font-family: inherit;
   outline: none;
 }
@@ -1618,13 +1666,14 @@ body.dark-theme .working-dots::after {
     width: 280px !important;
     max-width: 85vw !important;
     z-index: 1000 !important;
-    transform: translateX(-100%) !important;
+    transform: translateX(-105%) !important;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    box-shadow: 0 0 30px rgba(0,0,0,0.7) !important;
+    box-shadow: none !important;
   }
 
   .sidebar.mobile-open {
     transform: translateX(0) !important;
+    box-shadow: 0 0 25px rgba(0,0,0,0.5) !important;
   }
 
   .main-content {
@@ -1676,22 +1725,7 @@ body.dark-theme .working-dots::after {
   }
 
   .custom-network-selector {
-    margin-left: 0 !important;
-  }
-
-  .network-selector-pill {
-    padding: 4px 8px !important;
-    font-size: 0.72rem !important;
-    white-space: nowrap !important;
-  }
-
-  .network-label {
-    max-width: 68px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-    display: inline-block !important;
-    vertical-align: middle !important;
+    display: none !important;
   }
 
   .workspace-container {
@@ -1718,8 +1752,12 @@ body.dark-theme .working-dots::after {
     flex: 1 !important;
     min-height: 0 !important;
     overflow-y: auto !important;
-    padding: 12px 14px !important;
+    padding: 48px 14px 12px !important;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-container > div {
+    padding-top: 20px !important;
   }
 
   .message-wrapper.user {
@@ -1735,7 +1773,8 @@ body.dark-theme .working-dots::after {
     flex-shrink: 0 !important;
     position: relative !important;
     bottom: 0 !important;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 4px 6px calc(2px + env(safe-area-inset-bottom, 0px)) !important;
+    margin: 0 !important;
     background: var(--bg-color) !important;
     border-top: 1px solid var(--glass-border) !important;
     z-index: 30 !important;
@@ -1746,40 +1785,191 @@ body.dark-theme .working-dots::after {
   }
 
   .input-form {
-    border-radius: 20px !important;
+    border-radius: 24px !important;
     padding: 4px 8px !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-height: 44px !important;
+    box-shadow: none !important;
+  }
+
+  *, *::before, *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+
+  .action-menu-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-right: 0 !important;
+    flex-shrink: 0 !important;
   }
 
   .chat-input {
-    font-size: 0.9rem !important;
+    font-size: 0.92rem !important;
+    line-height: 1.4 !important;
     padding: 6px 8px !important;
+    margin: 0 !important;
     max-height: 100px !important;
+    vertical-align: middle !important;
   }
 
   .send-button, .voice-button {
-    width: 32px !important;
-    height: 32px !important;
+    width: 34px !important;
+    height: 34px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
-  .page-scroll-container {
-    padding: 8px !important;
+  .empty-state-container {
+    padding: 24px 16px !important;
+    max-width: 100% !important;
   }
 
-  .form-row {
-    flex-direction: column !important;
-    gap: 12px !important;
+  .empty-state-logo-wrapper {
+    padding: 20px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .empty-state-title {
+    font-size: 1.65rem !important;
     margin-bottom: 12px !important;
+    padding: 0 8px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
   }
 
-  .form-group, .form-group.flex-1 {
-    width: 100% !important;
-    flex: none !important;
-    margin-bottom: 8px !important;
+  .empty-state-desc {
+    font-size: 0.95rem !important;
+    padding: 0 12px !important;
+    line-height: 1.5 !important;
+    max-width: 100% !important;
   }
 
-  .nord-pill-input, input, select {
+  /* 1. Page Scroll Containers */
+  .page-scroll-container,
+  .overview-container,
+  .workspace-container,
+  .canvas-panel {
+    padding: 12px 14px !important;
     width: 100% !important;
+    max-width: 100vw !important;
     box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  /* 2. Top-level Page Headers - Stack Title & Action Buttons */
+  .overview-container > div[style*="display: flex"]:first-child,
+  .page-scroll-container > div[style*="display: flex"]:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .overview-container > div[style*="display: flex"]:first-child > div[style*="display: flex"] {
+    width: 100% !important;
+  }
+
+  .overview-container > div[style*="display: flex"]:first-child button,
+  .page-scroll-container > div[style*="display: flex"]:first-child button {
+    width: 100% !important;
+    justify-content: center !important;
+    margin-left: 0 !important;
+  }
+
+  /* 3. Force ALL inline Grids to 1 Column */
+  div[style*="gridTemplateColumns"],
+  div[style*="display: grid"],
+  div[style*="display:grid"] {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* 4. Force ALL side-by-side flex layouts to stack vertically */
+  .overview-container > div[style*="display: flex"]:not(:first-child),
+  .page-scroll-container > div[style*="display: flex"]:not(:first-child) {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  /* 5. Force fixed width sidebars/info panels to 100% width on mobile */
+  div[style*="width: 300px"],
+  div[style*="width: 320px"],
+  div[style*="width: 350px"],
+  div[style*="width: 400px"],
+  div[style*="flex: 0 0 200px"],
+  div[style*="flex: 0 0 250px"],
+  div[style*="flex: 0 0 300px"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 6. Cards, Playbook Rows, Cron Job Items, Memory Rows */
+  .overview-container div[style*="justify-content: space-between"]:not(.empty-state-container):not(.topbar-left):not(.topbar-right),
+  .page-scroll-container div[style*="justify-content: space-between"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .overview-container div[style*="align-items: flex-end"] {
+    align-items: stretch !important;
+    margin-left: 0 !important;
+  }
+
+  /* 7. Form Controls & Buttons */
+  .nord-pill-input,
+  input,
+  select,
+  textarea {
+    width: 100% !important;
+    font-size: 0.88rem !important;
+    padding: 10px 12px !important;
+    box-sizing: border-box !important;
+    border-radius: 10px !important;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .form-actions button {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 10px 14px !important;
+    font-size: 0.9rem !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 8. Tables & Code Blocks */
+  table {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  th, td {
+    padding: 8px 10px !important;
+    font-size: 0.8rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* 9. Terminal Window Minimum Height on Mobile */
+  div[style*="minHeight: 500px"],
+  div[style*="min-height: 500px"] {
+    min-height: 350px !important;
   }
 }

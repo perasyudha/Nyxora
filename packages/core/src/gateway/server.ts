@@ -1922,7 +1922,7 @@ export async function startServer() {
   });
 
   const PORT = CORE_PORT;
-  const HOST = process.env.HOST || '0.0.0.0';
+  const HOST = process.env.HOST || '127.0.0.1';
   const server = app.listen(PORT, HOST, () => {
     console.log(`🤖 Nyxora API Server running on ${HOST}:${PORT}`);
     

@@ -43,19 +43,18 @@ export const useChat = (isVoiceMode: boolean, speak: (text: string) => void) => 
       if (res.ok) {
         const data = await res.json();
         setMessages(prev => {
-          const optimisticMsgs = prev.filter(m => m.isOptimistic);
-          const nonOptimisticPrev = prev.filter(m => !m.isOptimistic);
-          
-          if (JSON.stringify(nonOptimisticPrev) === JSON.stringify(data)) {
+          // Protect local typewriter streaming and optimistic user messages from being wiped
+          if (prev.some(m => m.isStreaming || m.isOptimistic)) {
             return prev;
           }
 
-          if (optimisticMsgs.length > 0) {
-            const missingOptimistic = optimisticMsgs.filter(opt => !data.some((d: any) => d.role === 'user' && d.content === opt.content));
-            if (missingOptimistic.length > 0) {
-              return [...data, ...missingOptimistic];
-            }
+          if (prev.length === data.length) {
+            const isSame = data.every((d: any, i: number) => 
+              prev[i] && prev[i].role === d.role && prev[i].content === d.content
+            );
+            if (isSame) return prev;
           }
+
           return data;
         });
       }
@@ -70,8 +69,11 @@ export const useChat = (isVoiceMode: boolean, speak: (text: string) => void) => 
       if (res.ok) {
         const data = await res.json();
         setChatSessions(data);
-        if (data.length > 0 && !sessionId) {
-          setActiveSessionId(data[0].id);
+        if (data.length > 0) {
+          const exists = data.some((s: any) => s.id === sessionId);
+          if (!sessionId || !exists) {
+            setActiveSessionId(data[0].id);
+          }
         }
       }
     } catch {}
@@ -332,15 +334,39 @@ export const useChat = (isVoiceMode: boolean, speak: (text: string) => void) => 
       const textarea = document.querySelector('.chat-input') as HTMLTextAreaElement;
       if (textarea) {
         textarea.style.height = 'auto';
-        setTimeout(() => textarea.focus(), 150);
+        if (typeof window !== 'undefined' && window.innerWidth > 768) {
+          setTimeout(() => textarea.focus(), 150);
+        }
       }
     }
   };
 
   useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'nyxora_active_session_id') {
+        setActiveSessionId(e.newValue);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  useEffect(() => {
     fetchHistory();
     fetchSessions();
-  }, [activeSessionId]);
+
+    if (!activeSessionId) return;
+
+    // Smart polling to keep desktop and mobile in sync in real-time
+    const interval = setInterval(() => {
+      if (!isLoading) {
+        fetchHistory(activeSessionId);
+        fetchSessions(activeSessionId);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [activeSessionId, isLoading]);
 
   return {
     messages,

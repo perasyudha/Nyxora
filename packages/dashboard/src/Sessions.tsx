@@ -220,7 +220,7 @@ export const Sessions: React.FC = () => {
 
       // 2. We want at least (clientHeight) of space below the message
       // so it can sit comfortably at the top (0px offset)
-      const desiredMinHeight = container.clientHeight - 0;
+      const desiredMinHeight = container.clientHeight - 12;
       if (contentBelowTop < desiredMinHeight && spacerDivRef.current) {
         spacerDivRef.current.style.height = `${desiredMinHeight - contentBelowTop}px`;
         // Force synchronous layout recalculation so the browser knows we have space!
@@ -228,7 +228,7 @@ export const Sessions: React.FC = () => {
       }
 
       // 3. Now we are guaranteed to have enough space, safely scroll.
-      const targetScrollTop = Math.max(0, elOffsetTop - 0);
+      const targetScrollTop = Math.max(0, elOffsetTop - 12);
 
 
       container.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
@@ -407,17 +407,14 @@ export const Sessions: React.FC = () => {
     <div className="workspace-container">
       <div className="chat-wrapper" style={{ width: '100%', display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-        <div className={`empty-state-container ${messages.length > 0 ? 'hidden-state' : ''}`} style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          textAlign: 'center'
-        }}>
-          <div style={{ background: 'radial-gradient(circle at center, rgba(34, 197, 94, 0.15) 0%, transparent 70%)', padding: '40px', borderRadius: '50%', marginBottom: '20px' }}>
-            <NyxoraLogo size={80} color="var(--accent)" />
+        <div className={`empty-state-container ${messages.length > 0 ? 'hidden-state' : ''}`}>
+          <div className="empty-state-logo-wrapper">
+            <NyxoraLogo size={70} color="var(--accent)" />
           </div>
-          <h1 className="empty-state-title" style={{ fontSize: '3rem', fontWeight: 700, marginBottom: '16px', letterSpacing: '-1px' }}>
+          <h1 className="empty-state-title">
             {greetings[0].title}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '500px', lineHeight: '1.6' }}>
+          <p className="empty-state-desc">
             {greetings[0].desc}
           </p>
         </div>
@@ -428,7 +425,7 @@ export const Sessions: React.FC = () => {
           onScroll={handleScroll}
           style={{ display: 'flex', flexDirection: 'column' }}
         >
-          <div style={{ maxWidth: '900px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '24px' }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '0px', paddingBottom: '24px' }}>
             {getMergedMessages(messages).map((msg, idx) => {
               const handleCopy = () => {
                 navigator.clipboard.writeText(msg.content);
@@ -544,7 +541,7 @@ export const Sessions: React.FC = () => {
               }}
               disabled={isLoading}
               rows={1}
-              style={{ resize: 'none', minHeight: '36px', paddingTop: '10px' }}
+              style={{ resize: 'none', minHeight: '32px' }}
             />
             <button type="submit" className="send-button" disabled={isLoading || !input.trim()}>
               {isLoading ? <Loader2 size={20} className="spinner" /> : <Send size={20} />}
