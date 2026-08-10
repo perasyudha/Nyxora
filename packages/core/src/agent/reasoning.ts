@@ -265,7 +265,7 @@ export async function processUserInput(input: string, role: 'user' | 'system' = 
           context = 'os';
           preCheckMatched = true;
         // Check if the assistant was asking for permission to run a Web3 transaction
-        } else if (lastContent.includes('swap') || lastContent.includes('transfer') || lastContent.includes('token') || lastContent.includes('wallet') || lastContent.includes('transaction') || lastContent.includes('nft') || lastContent.includes('opensea') || lastContent.includes('seaport')) {
+        } else if (lastContent.includes('swap') || lastContent.includes('transfer') || lastContent.includes('token') || lastContent.includes('wallet') || lastContent.includes('transaction') || lastContent.includes('nft')) {
           context = 'web3';
           preCheckMatched = true;
         }

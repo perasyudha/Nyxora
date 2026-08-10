@@ -54,12 +54,7 @@ export async function confirmPendingTx(action: "approve" | "reject"): Promise<st
       result = await executeUniv3Mint(tx.chainName as any, tx.details);
     } else if (tx.type === 'revokeApproval') {
       result = await executeRevokeApproval(tx.chainName as any, tx.details, true);
-    } else if (tx.type === 'nftBuy') {
-      const { executeNftBuy } = await import('./buyNftOpensea');
-      result = await executeNftBuy(tx.chainName as any, tx.details, true);
-    } else if (tx.type === 'nftList') {
-      const { executeNftList } = await import('./listNftOpensea');
-      result = await executeNftList(tx.chainName as any, tx.details, true);
+
     } else if (tx.type === 'limit_order') {
       // Need dynamic import for logger to avoid circular dependency
       const { logger } = await import('../../agent/reasoning');

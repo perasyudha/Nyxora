@@ -338,12 +338,10 @@ export async function processWeb3Intent(input: string, role: 'user' | 'system' =
         'transfer_token', 'transfer_native', 'swap_token', 'bridge_token',
         'mint_nft', 'custom_tx', 'revoke_approval', 'supply_aave',
         'deposit_yield_vault', 'provide_liquidity_v3', 'confirm_pending_tx',
-        'buy_nft_opensea', 'list_nft_opensea',
         // Read-only info fetches (new) — these NEVER need a follow-up LLM turn
         'check_portfolio', 'get_balance', 'get_token_balance', 'get_wallet_balance',
         'get_token_price', 'get_gas_price', 'get_network_stats',
         'check_allowance', 'get_transaction_status', 'get_nft_holdings',
-        'get_nft_market_stats',
       ];
 
       for (const _toolCall of responseMessage.tool_calls) {

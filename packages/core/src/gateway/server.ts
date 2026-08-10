@@ -600,13 +600,6 @@ app.get('/api/market-keys', (req, res) => {
           required: false,
           docsUrl: 'https://pro.coinmarketcap.com/',
           configured: !!keys.cmc_key
-        },
-        {
-          id: 'opensea_key',
-          label: 'OpenSea API Key',
-          required: false,
-          docsUrl: 'https://docs.opensea.io/reference/api-overview',
-          configured: !!keys.opensea_key
         }
       ]
     });

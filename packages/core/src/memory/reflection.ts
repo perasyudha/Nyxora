@@ -124,8 +124,21 @@ Return a JSON object with an array "memories". If there is nothing new to extrac
       if (!content) return;
 
       // Strip markdown codeblocks if LLM incorrectly formatted it
-      const cleanContent = content.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const data = JSON.parse(cleanContent);
+      let cleanContent = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+      
+      // Extract JSON object substring if LLM included conversational text
+      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanContent = jsonMatch[0];
+      }
+
+      let data: any;
+      try {
+        data = JSON.parse(cleanContent);
+      } catch (parseErr) {
+        console.warn(`[ReflectionEngine] Invalid JSON response from LLM: ${cleanContent.substring(0, 80)}...`);
+        return;
+      }
 
       const memories = data.memories || [];
 
