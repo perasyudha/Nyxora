@@ -30,7 +30,7 @@
     "duck-duck-scrape": "^2.2.7",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
-    "gaxios": "^7.1.5",
+    "gaxios": "^7.3.0",
     "google-auth-library": "^10.9.0",
     "grammy": "^1.44.0",
     "helmet": "^8.2.0",
