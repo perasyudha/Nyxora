@@ -146,18 +146,18 @@ export const marketAnalysisToolDefinition = {
   type: "function",
   function: {
     name: "analyze_market",
-    description: "MUST be used whenever the user asks for 'analisis', 'analysis', 'market intelligence', or a deep dive into a token. Fetches live, expert-level Web3 market data including Liquidity Risk, Smart Money Flow (TVL), Holder Concentration, and Momentum. DO NOT use this tool for simple price checks, balance fiat conversions, or if the user just asks 'cek saldo dirupiahin'. For simple price/fiat math, ALWAYS use 'get_price'.",
+    description: "MUST be used whenever the user asks for 'analisis', 'analysis', 'market intelligence', or a deep dive into ANY crypto token. SUPPORTS ALL ASSETS: Native assets (BTC, SOL, XRP, DOGE) as well as DEX tokens and EVM Contract Addresses. For native non-EVM coins (e.g. BTC, SOL, XRP), pass 'ethereum' or 'unknown' as chainName and the exact token symbol (e.g. 'BTC') as tokenAddressOrSymbol. DO NOT substitute native coins with wrapped tokens (e.g. DO NOT analyze WBTC when user asked for BTC). DO NOT claim native assets are unsupported. DO NOT use this tool for simple price/fiat math (use 'get_price' instead).",
     parameters: {
       type: "object",
       properties: {
         chainName: {
           type: "string",
           enum: SUPPORTED_CHAIN_NAMES,
-          description: "The blockchain network",
+          description: "The blockchain network. For native non-EVM coins (BTC, SOL, XRP), pass 'ethereum' or 'unknown'.",
         },
         tokenAddressOrSymbol: {
           type: "string",
-          description: "The token symbol (e.g. USDC, PEPE) or exact Contract Address (e.g. 0x...) to analyze.",
+          description: "The exact token symbol (e.g. BTC, ETH, SOL, PEPE) or exact Contract Address (0x...) to analyze.",
         }
       },
       required: ["tokenAddressOrSymbol"],

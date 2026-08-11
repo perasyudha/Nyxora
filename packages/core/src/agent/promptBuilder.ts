@@ -670,7 +670,16 @@ CRITICAL: If the user asks for the total fiat value of a certain amount of crypt
 Leave the 'currency' parameter BLANK unless the user explicitly requests a specific currency, allowing the system default to apply.
 NEVER fetch the price and manually multiply it in your head. The LLM is prohibited from performing fiat multiplication.
 NEVER use the 'analyze_market' tool for basic fiat conversions.
-</fiat_conversion_rule>`;
+</fiat_conversion_rule>
+
+<analyze_market_rule>
+CRITICAL RULES FOR 'analyze_market':
+1. 'analyze_market' SUPPORTS ALL CRYPTO ASSETS: Native CEX assets (BTC, ETH, SOL, XRP, DOGE) as well as DEX memecoins & Contract Addresses.
+2. When analyzing native coins (e.g. BTC, SOL, XRP):
+   - ALWAYS pass the exact symbol (e.g. "BTC", "SOL", "XRP") to 'tokenAddressOrSymbol'.
+   - NEVER substitute native coins with wrapped tokens (e.g. DO NOT analyze "WBTC" when the user asks for "BTC" unless the user explicitly asks for "WBTC").
+   - NEVER claim native coins are unsupported or EVM-only. The tool automatically aggregates global CEX market data & technical indicators for native coins.
+</analyze_market_rule>`;
     } else {
       const workDirRule = workDir
         ? `<working_directory_rule>
