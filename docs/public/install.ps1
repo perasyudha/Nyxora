@@ -1,6 +1,6 @@
 # =============================================================================
 #  Nyxora Installer — Windows (PowerShell)
-#  https://nyxoraai.github.io/Nyxora/install.ps1
+#  https://perasyudha.github.io/Nyxora/install.ps1
 # =============================================================================
 $ErrorActionPreference = "Stop"
 
@@ -26,7 +26,7 @@ Write-Host @"
 
 "@ -ForegroundColor Cyan
 Write-Host "  Your Personal Web3 Assistant" -ForegroundColor DarkGray
-Write-Host "  https://github.com/nyxoraAI/Nyxora`n" -ForegroundColor DarkGray
+Write-Host "  https://github.com/perasyudha/Nyxora`n" -ForegroundColor DarkGray
 
 # ═════════════════════════════════════════════════════════════════════════════
 #  STEP 1 — Node.js
@@ -148,5 +148,5 @@ Write-Host "  1. Run the setup wizard:   nyxora setup" -ForegroundColor Cyan
 Write-Host "  2. Start the daemon:        nyxora start" -ForegroundColor Cyan
 Write-Host "  3. Open the dashboard:      nyxora dashboard" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Docs: https://nyxoraai.github.io/Nyxora/" -ForegroundColor DarkGray
+Write-Host "  Docs: https://perasyudha.github.io/Nyxora/" -ForegroundColor DarkGray
 Write-Host ""

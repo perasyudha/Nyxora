@@ -155,7 +155,7 @@ By default, custom providers will render without a logo. To display a beautiful 
 Don't want to deal with manual file creation? Nyxora's Local Agent comes equipped with the `install_defi_provider` skill.
 
 You can simply tell your Nyxora Agent in the chat:
-> *"Hey Nyxora, please install the Jupiter DEX provider from this Github link: https://github.com/nyxoraAI/plugins/blob/main/JupiterProvider.ts"*
+> *"Hey Nyxora, please install the Jupiter DEX provider from this Github link: https://github.com/perasyudha/plugins/blob/main/JupiterProvider.ts"*
 
 ### 🚀 How the Autonomous Installer Works:
 1. **URL Translation:** Nyxora automatically converts standard Github web URLs into `raw.githubusercontent.com` direct download links.

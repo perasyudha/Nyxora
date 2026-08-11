@@ -130,7 +130,6 @@ export default defineConfig({
           items: [
             { text: 'Native Skills', link: '/core/native' },
             { text: 'Workflows (Playbooks)', link: '/core/playbooks' },
-            { text: 'NFT Trading & OpenSea', link: '/core/nft' },
             { text: 'Python ML Engine', link: '/core/ml-engine' },
             { text: 'Market Intelligence', link: '/core/market-intelligence' },
             { text: 'Web Search & Deep Research', link: '/core/web-search' },
@@ -149,7 +148,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/nyxoraAI/Nyxora' },
+      { icon: 'github', link: 'https://github.com/perasyudha/Nyxora' },
       { 
         icon: {
           svg: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="12" fill="currentColor"/><path d="M15.418 7H17.2L13.3 11.45L17.882 17.5H14.3L11.498 13.84L8.298 17.5H6.518L10.74 12.678L6.37 7H10.052L12.59 10.334L15.418 7ZM14.814 16.434H15.8L9.382 7.962H8.322L14.814 16.434Z" fill="var(--vp-c-bg)"/></svg>'

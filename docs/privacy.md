@@ -24,4 +24,4 @@ We employ OS-native security mechanisms (such as the OS Keyring via `@napi-rs/ke
 We may update this Privacy Policy from time to time as Nyxora evolves. Any changes will be posted on this page.
 
 ## 5. Contact Us
-If you have any questions about this Privacy Policy, please open an issue on our [GitHub Repository](https://github.com/nyxoraAI/Nyxora).
+If you have any questions about this Privacy Policy, please open an issue on our [GitHub Repository](https://github.com/perasyudha/Nyxora).

@@ -122,5 +122,5 @@ After executing those commands, `nyxora -v` will point to the correct, newly ins
 
 ---
 
-*Still facing issues? Feel free to open an issue on our [GitHub Repository](https://github.com/nyxoraAI/Nyxora/issues).*
+*Still facing issues? Feel free to open an issue on our [GitHub Repository](https://github.com/perasyudha/Nyxora/issues).*
 

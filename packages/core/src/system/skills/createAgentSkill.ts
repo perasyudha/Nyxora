@@ -73,7 +73,7 @@ export async function createAgentSkill(name: string, description: string, parame
       name: safeName,
       description: description,
       version: '1.0.0',
-      author: 'NyxoraAI',
+      author: 'perasyudha',
       parameters: finalParameters,
       required: required
     };

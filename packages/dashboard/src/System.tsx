@@ -95,7 +95,7 @@ export const System: React.FC = () => {
   };
 
   const handleReportBug = () => {
-    window.open('https://github.com/nyxoraAI/Nyxora/discussions', '_blank');
+    window.open('https://github.com/perasyudha/Nyxora/discussions', '_blank');
   };
 
   const handleDonate = () => {

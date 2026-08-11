@@ -113,15 +113,15 @@
             <div class="flex justify-between items-center mb-3">
               <span class="text-gray-500 text-sm">Privacy Policy URL:</span>
               <div class="flex items-center gap-2">
-                <span class="text-gray-900 dark:text-gray-200 font-mono text-sm bg-white dark:bg-black/20 px-2 py-0.5 rounded">https://nyxoraai.github.io/privacy</span>
-                <button onclick={() => copyToClipboard('https://nyxoraai.github.io/privacy')} class="bg-transparent border-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer p-1"><Copy size={14} /></button>
+                <span class="text-gray-900 dark:text-gray-200 font-mono text-sm bg-white dark:bg-black/20 px-2 py-0.5 rounded">https://perasyudha.github.io/privacy</span>
+                <button onclick={() => copyToClipboard('https://perasyudha.github.io/privacy')} class="bg-transparent border-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer p-1"><Copy size={14} /></button>
               </div>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-gray-500 text-sm">Terms of Service URL:</span>
               <div class="flex items-center gap-2">
-                <span class="text-gray-900 dark:text-gray-200 font-mono text-sm bg-white dark:bg-black/20 px-2 py-0.5 rounded">https://nyxoraai.github.io/terms</span>
-                <button onclick={() => copyToClipboard('https://nyxoraai.github.io/terms')} class="bg-transparent border-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer p-1"><Copy size={14} /></button>
+                <span class="text-gray-900 dark:text-gray-200 font-mono text-sm bg-white dark:bg-black/20 px-2 py-0.5 rounded">https://perasyudha.github.io/terms</span>
+                <button onclick={() => copyToClipboard('https://perasyudha.github.io/terms')} class="bg-transparent border-none text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer p-1"><Copy size={14} /></button>
               </div>
             </div>
           </div>

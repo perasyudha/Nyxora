@@ -34,7 +34,7 @@ Nyxora uses a Monorepo architecture and employs a strict **Bring Your Own Keys (
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/nyxoraAI/Nyxora.git
+   git clone https://github.com/perasyudha/Nyxora.git
    cd Nyxora
    ```
 

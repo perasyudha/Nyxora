@@ -41,4 +41,4 @@ policyApp.listen(3001, () => {
 
 ## Documentation
 
-For full documentation and architecture details, please visit the [Nyxora SDK Framework Documentation](https://nyxoraai.github.io/Nyxora/sdk/).
+For full documentation and architecture details, please visit the [Nyxora SDK Framework Documentation](https://perasyudha.github.io/Nyxora/sdk/).

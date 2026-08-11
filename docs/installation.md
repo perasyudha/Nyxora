@@ -19,12 +19,12 @@ The cleanest way to install Nyxora. This script automatically handles Node.js se
 
 **Linux & macOS:**
 ```bash
-curl -fsSL https://nyxoraai.github.io/Nyxora/install.sh | bash
+curl -fsSL https://perasyudha.github.io/Nyxora/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 ```powershell
-iwr -useb https://nyxoraai.github.io/Nyxora/install.ps1 | iex
+iwr -useb https://perasyudha.github.io/Nyxora/install.ps1 | iex
 ```
 
 > ✅ **Zero warnings.** The installer handles all dependency permissions automatically via `--allow-scripts`.
@@ -73,7 +73,7 @@ Nyxora operates on a Monorepo architecture using NPM Workspaces. If you want to 
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/nyxoraAI/Nyxora.git
+git clone https://github.com/perasyudha/Nyxora.git
 cd Nyxora
 ```
 

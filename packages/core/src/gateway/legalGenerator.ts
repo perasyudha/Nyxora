@@ -37,7 +37,7 @@ export function generatePrivacyPolicyHtml(): string {
     <p>Because your data is stored locally on your own hardware, you maintain 100% control over it. You can delete all your data, including Google OAuth tokens, at any time by running the <code>nyxora clear --force</code> command or by deleting the <code>~/.nyxora</code> directory on your device.</p>
 
     <h2>5. Contact Us</h2>
-    <p>If you have any questions regarding this Privacy Policy, please refer to the <a href="https://github.com/nyxoraAI/Nyxora">Nyxora GitHub Repository</a>.</p>
+    <p>If you have any questions regarding this Privacy Policy, please refer to the <a href="https://github.com/perasyudha/Nyxora">Nyxora GitHub Repository</a>.</p>
   </div>
 </body>
 </html>

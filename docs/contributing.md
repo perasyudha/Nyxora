@@ -24,7 +24,7 @@ Instead of hacking into complex AI prompt loops, you can simply leverage our rob
 
 ## ✨ Finding an Issue
 
-If you're looking for a way to contribute but aren't sure where to start, check out the [Issues page](https://github.com/nyxoraAI/Nyxora/issues) on our GitHub repository.
+If you're looking for a way to contribute but aren't sure where to start, check out the [Issues page](https://github.com/perasyudha/Nyxora/issues) on our GitHub repository.
 - Look for issues tagged with `good first issue` for great beginner-friendly tasks.
 - Issues tagged with `help wanted` are areas where we explicitly need community assistance.
 - Feel free to ask questions in the issue comments if you need clarification before starting work.
@@ -35,7 +35,7 @@ If you're looking for a way to contribute but aren't sure where to start, check 
 
 We use a standard Git workflow for all contributions:
 
-1. **Fork the Repository**: Start by forking the [Nyxora Repository](https://github.com/nyxoraAI/Nyxora) to your own GitHub account.
+1. **Fork the Repository**: Start by forking the [Nyxora Repository](https://github.com/perasyudha/Nyxora) to your own GitHub account.
 2. **Clone Locally**: Clone your fork to your local machine.
    ```bash
    git clone https://github.com/YOUR-USERNAME/Nyxora.git

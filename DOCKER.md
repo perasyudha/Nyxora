@@ -9,13 +9,13 @@ You have two options to obtain the Nyxora Docker image:
 ### Option A: Pull Pre-built Image (Recommended & Fastest)
 Nyxora officially publishes Docker images via GitHub Container Registry (GHCR) upon every release.
 ```bash
-docker pull ghcr.io/nyxoraai/nyxora:latest
+docker pull ghcr.io/perasyudha/nyxora:latest
 ```
 
 ### Option B: Build Locally
 If you are developing or prefer to compile it yourself, run this in the root directory:
 ```bash
-docker build -t ghcr.io/nyxoraai/nyxora:latest .
+docker build -t ghcr.io/perasyudha/nyxora:latest .
 ```
 > **Note:** The initial build takes time as it compiles C++/Rust system modules (`isolated-vm`, `libsecret`).
 
@@ -26,7 +26,7 @@ Nyxora requires an initial configuration (API Keys, Web3 Wallet, etc.). Run the 
 
 This command mounts a volume and saves your configurations safely to a `.nyxora_docker` folder in your computer's Home directory, ensuring your existing local Nyxora installation remains untouched.
 ```bash
-docker run -it --rm -v ~/.nyxora_docker:/root/.nyxora ghcr.io/nyxoraai/nyxora:latest npx ts-node -T packages/core/src/gateway/setup-cli.ts
+docker run -it --rm -v ~/.nyxora_docker:/root/.nyxora ghcr.io/perasyudha/nyxora:latest npx ts-node -T packages/core/src/gateway/setup-cli.ts
 ```
 *Complete the setup by answering the prompts in your terminal. Once you see "Setup Successful!", this temporary container will automatically delete itself.*
 
@@ -35,7 +35,7 @@ docker run -it --rm -v ~/.nyxora_docker:/root/.nyxora ghcr.io/nyxoraai/nyxora:la
 ## 🚀 3. Start Nyxora (Background Daemon)
 Now that the setup is complete, it's time to start the main architecture (Core API, Policy Engine, and Signer Vault) as a non-stop background daemon:
 ```bash
-docker run -d --name nyxora-daemon -p 40000:40000 -p 50000:50000 -v ~/.nyxora_docker:/root/.nyxora ghcr.io/nyxoraai/nyxora:latest
+docker run -d --name nyxora-daemon -p 40000:40000 -p 50000:50000 -v ~/.nyxora_docker:/root/.nyxora ghcr.io/perasyudha/nyxora:latest
 ```
 *(This command will output a long container ID indicating that the daemon is successfully running).*
 

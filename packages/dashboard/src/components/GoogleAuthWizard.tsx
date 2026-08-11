@@ -129,15 +129,15 @@ export const GoogleAuthWizard: React.FC<GoogleAuthWizardProps> = ({ onClose }) =
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Privacy Policy URL:</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '0.85rem' }}>https://nyxoraai.github.io/privacy</span>
-                  <button onClick={() => copyToClipboard('https://nyxoraai.github.io/privacy')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '2px' }}><Copy size={13} /></button>
+                  <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '0.85rem' }}>https://perasyudha.github.io/privacy</span>
+                  <button onClick={() => copyToClipboard('https://perasyudha.github.io/privacy')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '2px' }}><Copy size={13} /></button>
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Terms of Service URL:</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '0.85rem' }}>https://nyxoraai.github.io/terms</span>
-                  <button onClick={() => copyToClipboard('https://nyxoraai.github.io/terms')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '2px' }}><Copy size={13} /></button>
+                  <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '0.85rem' }}>https://perasyudha.github.io/terms</span>
+                  <button onClick={() => copyToClipboard('https://perasyudha.github.io/terms')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '2px' }}><Copy size={13} /></button>
                 </div>
               </div>
             </div>

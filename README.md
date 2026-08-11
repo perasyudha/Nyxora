@@ -14,7 +14,7 @@
 
 Nyxora is a **secure, non-custodial runtime infrastructure for autonomous onchain agents** built with a robust Monorepo architecture (Node.js & React). Designed for autonomous workflows with a premium Utility-Centric dark-themed UI and strict client-side key isolation. 
 
-**Nyxora now natively supports the Model Context Protocol (MCP)**. You can transform your external AI agents (like Claude Desktop and Cursor) into secure Web3 actors that execute swaps and fetch balances using Nyxora's secure signer vault. [View the MCP Integration Guide](https://nyxoraai.github.io/Nyxora/mcp/)
+**Nyxora now natively supports the Model Context Protocol (MCP)**. You can transform your external AI agents (like Claude Desktop and Cursor) into secure Web3 actors that execute swaps and fetch balances using Nyxora's secure signer vault. [View the MCP Integration Guide](https://perasyudha.github.io/Nyxora/mcp/)
 
 It operates under a **Zero-Trust, Defense-in-Depth Cryptographically Bound Human-in-the-Loop** execution model, ensuring that Remote AIs (LLMs) never have unilateral access to your funds.
 
@@ -72,7 +72,7 @@ It operates under a **Zero-Trust, Defense-in-Depth Cryptographically Bound Human
 ## 🔥 Key Features
 
 ### Advanced Security Architecture
-*   **🛡️ On-Chain AI Kill-Switch**: Nyxora is governed by a Base Smart Contract (`NyxoraAgentRegistry`). Users have absolute cryptographic power to instantly paralyze the AI's on-chain execution if compromised, solving the Web3 AI safety dilemma. [Read more about our Base Architecture](https://nyxoraai.github.io/Nyxora/smart-contract)
+*   **🛡️ On-Chain AI Kill-Switch**: Nyxora is governed by a Base Smart Contract (`NyxoraAgentRegistry`). Users have absolute cryptographic power to instantly paralyze the AI's on-chain execution if compromised, solving the Web3 AI safety dilemma. [Read more about our Base Architecture](https://perasyudha.github.io/Nyxora/smart-contract)
 *   **6-Tier Hybrid Architecture**: Nyxora is split into isolated microservices: **Dashboard** (Port 5173), **MCP Server** (Port 3001), **Core LLM** (Port 40000), **ML Engine** (Python Sidecar on Port 50000), **Policy Engine** (Unix Socket), and **Signer Vault** (Unix Socket).
 *   **DeFi & Market Configuration BYOK & UI Masking**: All aggregator, provider, and oracle API keys are strictly isolated via a Bring Your Own Keys (BYOK) architecture into heavily guarded `~/.nyxora/defi_keys.yaml` and `~/.nyxora/market_keys.yaml` files. The local web Dashboard masks these injected secrets using `***********` and `IS_SET` censorship, completely neutralizing malicious browser extensions from exfiltrating your keys.
 *   **Approval Replay Protection (Nonce Guard)**: Transactions requested by the AI are drafted as hashes and signed with a randomized 16-byte Nonce. The `/api/transactions/:id/approve` endpoint strictly enforces Nonce matching to completely eliminate double-spending and Replay Attacks.
@@ -181,7 +181,7 @@ Within the AI Brain, the Web3 codebase is strictly divided to prevent the LLM fr
 
 ## 🛡️ Advanced Security & Threat Model
 
-To dive deeper into the technical details of our Zero-Knowledge security architecture, please visit the [Nyxora Security](https://nyxoraai.github.io/Nyxora/architecture).
+To dive deeper into the technical details of our Zero-Knowledge security architecture, please visit the [Nyxora Security](https://perasyudha.github.io/Nyxora/architecture).
 
 ---
 
@@ -197,12 +197,12 @@ The cleanest way to install Nyxora. This script automatically handles Node.js se
 
 **Linux & macOS:**
 ```bash
-curl -fsSL https://nyxoraai.github.io/Nyxora/install.sh | bash
+curl -fsSL https://perasyudha.github.io/Nyxora/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 ```powershell
-iwr -useb https://nyxoraai.github.io/Nyxora/install.ps1 | iex
+iwr -useb https://perasyudha.github.io/Nyxora/install.ps1 | iex
 ```
 
 > ✅ **Zero warnings.** The installer handles all dependency permissions automatically.
@@ -245,7 +245,7 @@ nyxora chat
 To run from source, modify behaviors, or contribute to the repository:
 
 ```bash
-git clone https://github.com/nyxoraAI/Nyxora.git
+git clone https://github.com/perasyudha/Nyxora.git
 cd Nyxora
 
 # 1. Install dependencies
@@ -281,7 +281,7 @@ This acts as a master reset switch to return your environment to a clean state.
 
 By downloading, installing, or using the Nyxora AI Agent, you agree to our assumption of risk and liability limitations. Please ensure you review our legal policies before deploying the agent.
 
-> **🔗 [Read the Full Terms of Service Here](https://nyxoraai.github.io/Nyxora/terms)**
+> **🔗 [Read the Full Terms of Service Here](https://perasyudha.github.io/Nyxora/terms)**
 
 ---
 
@@ -299,7 +299,7 @@ Nyxora features an extensible **Plugin Architecture** that makes it incredibly e
 
 For complete technical deep-dives into our Cryptographic Architecture, please visit our official VitePress Documentation Site!
 
-> **🔗 [Read the Full Nyxora Documentation Here](https://nyxoraai.github.io/Nyxora/)**
+> **🔗 [Read the Full Nyxora Documentation Here](https://perasyudha.github.io/Nyxora/)**
 
 ---
 

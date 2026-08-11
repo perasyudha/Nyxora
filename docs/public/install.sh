@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  Nyxora Installer — Linux & macOS
-#  https://nyxoraai.github.io/Nyxora/install.sh
+#  https://perasyudha.github.io/Nyxora/install.sh
 # =============================================================================
 set -euo pipefail
 
@@ -36,7 +36,7 @@ cat << 'EOF'
 EOF
 echo -e "${RESET}"
 echo -e "  ${DIM}Your Personal Web3 Assistant${RESET}"
-echo -e "  ${DIM}https://github.com/nyxoraAI/Nyxora${RESET}\n"
+echo -e "  ${DIM}https://github.com/perasyudha/Nyxora${RESET}\n"
 
 # ── OS Detection ─────────────────────────────────────────────────────────────
 OS="$(uname -s)"
@@ -182,7 +182,7 @@ echo -e "  ${CYAN}1.${RESET} Run the setup wizard:   ${BOLD}nyxora setup${RESET}
 echo -e "  ${CYAN}2.${RESET} Start the daemon:        ${BOLD}nyxora start${RESET}"
 echo -e "  ${CYAN}3.${RESET} Open the dashboard:      ${BOLD}nyxora dashboard${RESET}"
 echo ""
-echo -e "  ${DIM}Docs: https://nyxoraai.github.io/Nyxora/${RESET}"
+echo -e "  ${DIM}Docs: https://perasyudha.github.io/Nyxora/${RESET}"
 echo ""
 
 # Remind user to reload shell if nvm was freshly installed
