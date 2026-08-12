@@ -15,7 +15,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         
+      - name: Extract Release Notes
+        id: extract_notes
+        run: |
+          # Get the version from the tag (e.g. v26.8.12 -> 26.8.12)
+          VERSION=${GITHUB_REF#refs/tags/v}
+          # Extract the block from CHANGELOG.md corresponding to this version
+          awk -v ver="[$VERSION]" '/^## \[/ { if (p) { exit }; if ($2 == ver) { p=1; next } } p && NF' CHANGELOG.md > release_notes.md
+          
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body_path: release_notes.md
