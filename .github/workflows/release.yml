@@ -23,6 +23,11 @@ jobs:
           # Extract the block from CHANGELOG.md corresponding to this version
           awk -v ver="[$VERSION]" '/^## \[/ { if (p) { exit }; if ($2 == ver) { p=1; next } } p && NF' CHANGELOG.md > release_notes.md
           
+      - name: Clean up old release if exists
+        run: gh release delete ${{ github.ref_name }} -y || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
