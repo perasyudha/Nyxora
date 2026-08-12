@@ -14,6 +14,7 @@ import { TrajectoryLogger } from '../memory/trajectoryLogger';
 import { realignMarkdownTables } from '../utils/markdownTables';
 import { stripThinkBlocks, StreamingThinkScrubber } from '../utils/thinkScrubber';
 import { ML_BASE_URL } from '../config/constants';
+import { recordFailedCall, checkAndCaptureCorrection, clearSessionFailures } from './autoCorrectionCapture';
 
 import { promptBuilder } from './promptBuilder';
 
@@ -588,6 +589,7 @@ The user explicitly stated your previous response was WRONG, STALE, or INACCURAT
         // The new PromptBuilder handles robust reasoning. Post-generation critic
         // causes aggressive loops and UI artifacts.
         triggerBackgroundReview(sessionId);
+        clearSessionFailures(sessionId || 'default');
         return cleanedContent || '⚠️ I encountered an issue processing your request. This can happen with very complex multi-step tasks. Please try rephrasing or breaking the request into smaller steps.';
       }
 
@@ -653,14 +655,21 @@ The user explicitly stated your previous response was WRONG, STALE, or INACCURAT
         try {
           const pluginResult = await pluginManager.executeTool(toolName, args, { sessionId });
           result = pluginResult !== null ? pluginResult : `Error: Tool ${toolName} is not implemented.`;
-          if (result.includes('[Security Blocked]') || result.startsWith('Error:')) {
+          const isErrResult = result.includes('[Security Blocked]') || result.startsWith('Error:') ||
+            result.includes('[System Error]') || result.includes('[Error]');
+          if (isErrResult) {
             console.log(pc.red(`[❌ Failed] ${toolName} error.`));
+            // Record the failure for auto-correction capture
+            recordFailedCall(sessionId || 'default', toolName, args, result);
           } else {
             console.log(pc.green(`[✅ Success] ${toolName} succeeded.`));
+            // Check if this is a successful retry of a previously failed call — capture the correction
+            await checkAndCaptureCorrection(sessionId || 'default', toolName, args);
           }
         } catch (toolError: any) {
           result = `Error executing ${toolName}: ${toolError.message}`;
           console.error(pc.red(`[❌ Error Crash] ${toolName}: ${toolError.message}`));
+          recordFailedCall(sessionId || 'default', toolName, args, toolError.message);
         }
         return { toolCall, result };
       };
@@ -824,6 +833,7 @@ The user explicitly stated your previous response was WRONG, STALE, or INACCURAT
     const maxTurnMsg = `⚠️ Reached maximum interaction limit (${MAX_TURNS} turns). Context and progress have been preserved. Please review my work so far, and type "continue" or /resume to keep debugging.`;
     logger.addEntry({ role: 'assistant', content: maxTurnMsg }, sessionId);
     triggerBackgroundReview(sessionId);
+    clearSessionFailures(sessionId || 'default');
     return maxTurnMsg;
   } catch (error: any) {
     console.error("LLM Error:", error);

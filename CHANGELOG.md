@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [26.8.9]
 
+### AI Memory & Auto-Correction Engine
+- **Memory Honesty Guardrail (`promptBuilder.ts`)**: Injected a strict language-agnostic `MEMORY HONESTY` rule to prevent the AI from hallucinating or fabricating memories about the user. The AI is now explicitly forced to invoke the `search_memory` tool before answering any questions regarding past learnings, preferences, or stored facts.
+- **Deep Memory Search (`searchMemory.ts`)**: Upgraded the `search_memory` cognitive skill to seamlessly query both the long-term `episodic.db` (permanent facts and user persona traits) and the FTS5 chat history. Previously, it only searched chat logs, causing the AI to miss actual stored knowledge.
+- **Auto-Correction Capture (`autoCorrectionCapture.ts`)**: Engineered a brand new continuous-learning module. The agent loop now actively monitors for failed tool calls (e.g. malformed bash commands or bad JSON args). If the AI successfully retries and fixes the error on a subsequent turn, the system autonomously extracts the exact difference (the "lesson learned") and permanently writes it to `episodic.db` as a `system_correction`. This guarantees the AI never repeats the same operational mistake twice across any tool or command.
+
 ### Ultimate Web3 Master Plan
 - **Airdrop Discovery Engine (`discoveryEngine.ts`)**: Integrated with local `twitter-cli` to autonomously scan timelines of Alpha CT (Crypto Twitter) accounts, searching for "early" Web3 projects (seed rounds, incentivized testnets, points programs) without needing third-party aggregators.
 - **Project Anti-Scam Scorer (`projectScorer.ts`)**: Added automated Due Diligence tools to evaluate Web3 projects based on Tier-1 VC backers (e.g. a16z, Paradigm), social proof metrics, and domain age to filter out phishing and scam airdrops.
