@@ -774,7 +774,21 @@ export class GeminiAdapter implements LLMProvider {
         continue;
       }
       if (m.role === 'user') {
-        contents.push({ role: 'user', parts: [{ text: m.content }] });
+        if (Array.isArray(m.content)) {
+          const parts: any[] = [];
+          for (const block of m.content) {
+            if (block.type === 'text') parts.push({ text: block.text });
+            else if (block.type === 'image_url') {
+              const bData = block.image_url.url.replace(/^data:image\/[a-z]+;base64,/, '');
+              const mimeMatch = block.image_url.url.match(/^data:(image\/[a-z]+);base64,/);
+              const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+              parts.push({ inlineData: { mimeType: mime, data: bData } });
+            }
+          }
+          contents.push({ role: 'user', parts });
+        } else {
+          contents.push({ role: 'user', parts: [{ text: m.content }] });
+        }
       } else if (m.role === 'assistant') {
         const parts: any[] = [];
         if (m.content) parts.push({ text: m.content });

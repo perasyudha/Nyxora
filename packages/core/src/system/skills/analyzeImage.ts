@@ -25,6 +25,42 @@ export const analyzeLocalImageToolDefinition = {
   }
 };
 
+// ===================================================
+// AUXILIARY VISION CLIENT
+// Like Hermes, vision uses a DEDICATED provider chain,
+// completely separate from the main text LLM.
+//
+// Resolution order:
+//   1. config.llm.vision_provider + config.llm.vision_model (explicit)
+//   2. config.llm.provider === 'gemini' → use native Gemini SDK
+//   3. Any provider with a gemini_key → use native Gemini SDK as vision auxiliary
+//   4. Main LLM via executeWithRetry (OpenAI-compatible image_url format)
+// ===================================================
+
+async function callGeminiVision(base64Data: string, mimeType: string, prompt: string, model: string, geminiKey: string): Promise<string> {
+  const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
+  const genAI = new GoogleGenerativeAI(geminiKey);
+  const visionModel = genAI.getGenerativeModel({
+    model: model,
+    generationConfig: { temperature: 0.1 },
+    safetySettings: [
+      { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+      { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+      { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+      { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE }
+    ]
+  });
+
+  const response = await visionModel.generateContent([
+    prompt,
+    { inlineData: { data: base64Data, mimeType: mimeType } }
+  ]);
+
+  const text = response.response.text();
+  if (!text) throw new Error('Gemini Vision returned empty response.');
+  return text;
+}
+
 export async function analyzeLocalImage(imagePath: string, prompt: string): Promise<string> {
   if (!fs.existsSync(imagePath)) {
     return `[Error] Image file not found at path: ${imagePath}`;
@@ -40,27 +76,71 @@ export async function analyzeLocalImage(imagePath: string, prompt: string): Prom
   else if (ext === '.heic') mimeType = 'image/heic';
   else if (ext === '.heif') mimeType = 'image/heif';
 
-  const p = prompt.toLowerCase();
-  let contentType = 'photo';
-  if (p.includes('screenshot') || p.includes('ui')) contentType = 'screenshot';
-  else if (p.includes('chart') || p.includes('graph')) contentType = 'chart';
-  else if (p.includes('diagram') || p.includes('flowchart')) contentType = 'diagram';
-  else if (p.includes('document') || p.includes('text') || p.includes('markdown')) contentType = 'document';
-
   const config = loadConfig();
-  const model = config.llm?.model || 'gpt-4o-mini';
+  const keys = await loadApiKeys();
 
-  let sysPrompt = 'You are a helpful vision assistant. Analyze the image and answer the prompt.';
-  if (contentType !== 'photo') {
-      sysPrompt += `\nThe user is asking about a ${contentType}. Provide a structured, well-formatted response with clear sections.`;
+  // ===================================================
+  // STEP 1: Explicit auxiliary vision provider override
+  // (config.yaml: llm.vision_provider / llm.vision_model)
+  // ===================================================
+  const visionProvider = config.llm?.vision_provider;
+  const visionModel = config.llm?.vision_model;
+  
+  if (visionProvider === 'gemini' && visionModel) {
+    const geminiKey = keys['gemini_key'];
+    if (geminiKey) {
+      try {
+        return await callGeminiVision(base64Data, mimeType, prompt, visionModel, geminiKey);
+      } catch (e: any) {
+        console.error(`[Vision] Explicit auxiliary vision provider failed: ${e.message}`);
+        // Fall through to next method
+      }
+    }
   }
 
+  // ===================================================
+  // STEP 2: Main provider is Gemini — use native SDK
+  // ===================================================
+  const mainProvider = config.llm?.provider || 'openai';
+  const mainModel = config.llm?.model || 'gpt-4o-mini';
+  
+  if (mainProvider === 'gemini') {
+    const geminiKey = keys['gemini_key'];
+    if (geminiKey) {
+      const gmModel = mainModel.includes('gemini') ? mainModel : 'gemini-2.5-flash';
+      try {
+        return await callGeminiVision(base64Data, mimeType, prompt, gmModel, geminiKey);
+      } catch (e: any) {
+        return `[System Error] Gemini Vision failed: ${e.message}`;
+      }
+    }
+  }
+
+  // ===================================================
+  // STEP 3: Any provider, but Gemini key available →
+  //         use Gemini as auxiliary vision fallback
+  //         (like Hermes uses auxiliary_client for vision)
+  // ===================================================
+  const geminiKey = keys['gemini_key'];
+  if (geminiKey) {
+    try {
+      return await callGeminiVision(base64Data, mimeType, prompt, 'gemini-2.5-flash', geminiKey);
+    } catch (e: any) {
+      console.error(`[Vision] Gemini auxiliary fallback failed: ${e.message}. Trying main provider...`);
+      // Fall through to main provider
+    }
+  }
+
+  // ===================================================
+  // STEP 4: Main LLM via OpenAI-compatible image_url
+  //         (for gpt-4o, claude w/ vision, etc.)
+  // ===================================================
   try {
     const response = await executeWithRetry(async (client) => {
       return await client.chat({
-        model: model,
+        model: mainModel,
         messages: [
-          { role: 'system', content: sysPrompt },
+          { role: 'system', content: 'You are a helpful vision assistant. Analyze the image and answer the prompt.' },
           {
             role: 'user',
             content: [
@@ -72,37 +152,8 @@ export async function analyzeLocalImage(imagePath: string, prompt: string): Prom
         temperature: 0.1
       });
     });
-
-    return response.message.content || "[Error] No content generated.";
+    return response.message.content || '[Error] No content generated.';
   } catch (error: any) {
-    if (config.llm?.provider === 'gemini') {
-      try {
-        const { GoogleGenerativeAI } = require('@google/generative-ai');
-        const keys = await loadApiKeys();
-        const geminiKey = keys['gemini_key'];
-        
-        if (geminiKey) {
-          const genAI = new GoogleGenerativeAI(geminiKey);
-          const geminiModel = genAI.getGenerativeModel({ 
-              model: 'gemini-2.5-flash',
-              generationConfig: { temperature: 0.1 }
-          });
-          
-          const response = await geminiModel.generateContent([
-              prompt,
-              {
-                  inlineData: {
-                      data: base64Data,
-                      mimeType: mimeType
-                  }
-              }
-          ]);
-          return response.response.text() || "[Error] No content generated.";
-        }
-      } catch (geminiError: any) {
-        return `[System Error] Primary and Gemini fallback failed: ${error.message} / ${geminiError.message}`;
-      }
-    }
-    return `[System Error] Failed to analyze image: ${error.message}`;
+    return `[System Error] All vision providers failed. Last error: ${error.message}. Make sure you have a Gemini API key set ('nyxora set-key gemini <key>') for vision support when using non-vision providers like Claude.`;
   }
 }

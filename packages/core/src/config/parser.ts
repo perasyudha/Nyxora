@@ -126,6 +126,8 @@ export interface NyxoraConfig {
     image_model?: string;
     max_tokens?: number;
     max_context?: number;
+    vision_provider?: string;  // Dedicated vision provider (e.g. 'gemini'), falls back to llm.provider
+    vision_model?: string;     // Dedicated vision model (e.g. 'gemini-2.5-flash'), falls back to llm.model
   };
   web_search?: {
     provider: 'tavily' | 'brave' | 'duckduckgo' | 'mesh' | 'serpapi';
