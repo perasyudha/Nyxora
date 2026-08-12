@@ -73,6 +73,64 @@ export function extractExecuteTool(content: string, existingToolCalls: any[]): {
   return { content: newContent, toolCalls };
 }
 
+/**
+ * Detects and removes repetition loops that Gemini sometimes emits at end-of-stream.
+ * Examples caught:
+ *   "...PC kamu sehat. PC kamu sehat. PC kamu sehat."
+ *   "...tidak ada kendala. tidak ada kendala. ada kendala. kendala."
+ * Strategy: slide a window of decreasing phrase sizes (sentence → clause → word-group)
+ * and truncate the text the moment we detect ≥2 consecutive repetitions.
+ */
+export function deduplicateRepetitions(text: string): string {
+  // Normalize: collapse multiple newlines so sentence detection works better
+  let result = text;
+
+  // Pass 1: sentence-level repetition (anything ending with . ! ?)
+  // Split into "sentences" while preserving delimiters
+  const sentenceSplitRe = /([^.!?\n]{6,}[.!?\n])\s*/g;
+  const seenSentences = new Set<string>();
+  const outputSentences: string[] = [];
+  let lastIndex = 0;
+  let matchArr: RegExpExecArray | null;
+  let repetitionDetected = false;
+
+  // We operate on a clean version for matching but track position in original
+  sentenceSplitRe.lastIndex = 0;
+  while ((matchArr = sentenceSplitRe.exec(result)) !== null) {
+    const sentence = matchArr[1].trim().toLowerCase();
+    if (seenSentences.has(sentence)) {
+      // Found a repeated sentence — truncate here
+      result = result.slice(0, matchArr.index).trimEnd();
+      repetitionDetected = true;
+      break;
+    }
+    seenSentences.add(sentence);
+  }
+
+  // Pass 2: clause-level — catch "prima dan tidak ada beban. tidak ada beban. beban." style
+  // Split on comma/semicolon/period boundaries, check for repeating tail segments
+  if (!repetitionDetected) {
+    const clauses = result.split(/[,;.\n]+/).map(c => c.trim()).filter(c => c.length > 5);
+    for (let i = 1; i < clauses.length; i++) {
+      const cur = clauses[i].toLowerCase();
+      // Check if it's a suffix of the previous clause (progressive truncation repetition)
+      const prev = clauses[i - 1].toLowerCase();
+      if (prev.includes(cur) && cur.length > 5) {
+        // Find where the repetition starts in the result string and truncate
+        const curIndex = result.lastIndexOf(clauses[i]);
+        if (curIndex > 0) {
+          result = result.slice(0, curIndex).trimEnd();
+          // Clean up trailing punctuation clutter
+          result = result.replace(/[,;. ]+$/, '') + '.';
+          break;
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
 function sanitizeOpenAIMessages(messages: any[]): any[] {
   if (!Array.isArray(messages)) return messages;
 
@@ -661,6 +719,8 @@ export class GeminiAdapter implements LLMProvider {
         temperature: request.temperature ?? 0.4,  // lower default: reduces repetition / hallucination on simple prompts
         topP: 0.95,
         topK: 40,
+        frequencyPenalty: request.frequency_penalty ?? 0.5,  // Prevent Gemini repetition loop
+        presencePenalty: request.presence_penalty ?? 0.3,
       },
       safetySettings: [
         { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
@@ -821,6 +881,8 @@ export class GeminiAdapter implements LLMProvider {
         temperature: request.temperature ?? 0.4,  // lower default: reduces repetition / hallucination
         topP: 0.95,
         topK: 40,
+        frequencyPenalty: request.frequency_penalty ?? 0.5,  // Prevent Gemini repetition loop
+        presencePenalty: request.presence_penalty ?? 0.3,
       },
       safetySettings: [
         { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
@@ -920,6 +982,11 @@ export class GeminiAdapter implements LLMProvider {
         const extracted = extractExecuteTool(contentStr, finalToolCalls);
         contentStr = extracted.content;
         finalToolCalls = extracted.toolCalls;
+      }
+
+      // Post-process: cut off repetition loops that escaped the model-level penalty
+      if (contentStr) {
+        contentStr = deduplicateRepetitions(contentStr);
       }
 
       return {

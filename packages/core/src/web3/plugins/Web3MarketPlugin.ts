@@ -88,6 +88,7 @@ async function fetchCexMomentum(symbol: string, currentP: number) {
 }
 
 import { marketAnalysisToolDefinition } from '../skills/marketAnalysis';
+import { fetchWithX402Definition } from '../skills/x402Fetch';
 
 export class Web3MarketPlugin implements Plugin {
   public name = 'Web3MarketPlugin';
@@ -95,7 +96,8 @@ export class Web3MarketPlugin implements Plugin {
   public description = 'Provides deep market intelligence and trading analysis for Web3 assets.';
 
   public tools = [
-    marketAnalysisToolDefinition
+    marketAnalysisToolDefinition,
+    fetchWithX402Definition
   ];
 
   public handlers = {
@@ -106,6 +108,15 @@ export class Web3MarketPlugin implements Plugin {
         return await analyzeMarket(chainName, tokenAddressOrSymbol);
       } catch (error: any) {
         return `[Market Intelligence] Failed to aggregate data: ${error.message}`;
+      }
+    },
+    'fetch_with_x402': async (args: any, context?: any) => {
+      try {
+        const { url, method, headers, body } = args;
+        const { fetchWithX402 } = require('../skills/x402Fetch');
+        return await fetchWithX402(url, method, headers, body);
+      } catch (error: any) {
+        return `[x402 Fetch] Failed to fetch data: ${error.message}`;
       }
     }
   };

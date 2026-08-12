@@ -2,12 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
-## [26.8.9]
+## [26.8.12]
+
+### x402 Agentic Payment Protocol
+- **`x402Handler.ts`**: Implemented the core interceptor for the x402 payment protocol (Coinbase Ventures). Detects HTTP 402 responses, extracts payment parameters (`receiver`, `amount`, `currency`, `chain`), and routes the transaction directly to the Policy Engine (`/request-tx`) without creating any bypass paths. Fully respects `policy.yaml` rules (`require_approval`, `max_usd_per_tx`, `whitelist_only`).
+- **`fetch_with_x402` Skill (`x402Fetch.ts`)**: New cognitive skill allowing the LLM to make HTTP requests to paid agentic services. If an endpoint returns 402, the skill autonomously negotiates the payment, executes the transaction, and retries the request with the proof of payment (`X-Payment-Receipt` header) in a single seamless tool call.
+- **Web3MarketPlugin**: Registered `fetch_with_x402` and injected the `<x402_payment_rule>` into the Web3 agent's system prompt so the LLM understands when and how to utilize this autonomous payment capability.
+
+### Bug Fix: Gemini Repetition Loop
+- **`frequencyPenalty` & `presencePenalty` in Gemini Provider (`llmProvider.ts`)**: Added `frequencyPenalty: 0.5` and `presencePenalty: 0.3` to the `generationConfig` for both `chat()` and `stream()` methods in the Gemini provider. Previously, these parameters were omitted, causing Gemini to occasionally fall into a logit loop at the end of its response and repeat sentences/phrases endlessly.
+- **Post-Processing Deduplication (`deduplicateRepetitions`)**: Added the `deduplicateRepetitions()` function as a final safety net. Before streaming the response to the user, this function detects and truncates sentence repetitions (Pass 1) as well as progressive clause repetitions (Pass 2) that might escape the model-level penalty. Prevents outputs like *"...PC is healthy. PC is healthy. healthy. healthy."* from reaching the UI.
 
 ### AI Memory & Auto-Correction Engine
 - **Memory Honesty Guardrail (`promptBuilder.ts`)**: Injected a strict language-agnostic `MEMORY HONESTY` rule to prevent the AI from hallucinating or fabricating memories about the user. The AI is now explicitly forced to invoke the `search_memory` tool before answering any questions regarding past learnings, preferences, or stored facts.
 - **Deep Memory Search (`searchMemory.ts`)**: Upgraded the `search_memory` cognitive skill to seamlessly query both the long-term `episodic.db` (permanent facts and user persona traits) and the FTS5 chat history. Previously, it only searched chat logs, causing the AI to miss actual stored knowledge.
 - **Auto-Correction Capture (`autoCorrectionCapture.ts`)**: Engineered a brand new continuous-learning module. The agent loop now actively monitors for failed tool calls (e.g. malformed bash commands or bad JSON args). If the AI successfully retries and fixes the error on a subsequent turn, the system autonomously extracts the exact difference (the "lesson learned") and permanently writes it to `episodic.db` as a `system_correction`. This guarantees the AI never repeats the same operational mistake twice across any tool or command.
+
+## [26.8.9]
 
 ### Ultimate Web3 Master Plan
 - **Airdrop Discovery Engine (`discoveryEngine.ts`)**: Integrated with local `twitter-cli` to autonomously scan timelines of Alpha CT (Crypto Twitter) accounts, searching for "early" Web3 projects (seed rounds, incentivized testnets, points programs) without needing third-party aggregators.

@@ -703,7 +703,12 @@ CRITICAL RULES FOR 'analyze_market':
    - ALWAYS pass the exact symbol (e.g. "BTC", "SOL", "XRP") to 'tokenAddressOrSymbol'.
    - NEVER substitute native coins with wrapped tokens (e.g. DO NOT analyze "WBTC" when the user asks for "BTC" unless the user explicitly asks for "WBTC").
    - NEVER claim native coins are unsupported or EVM-only. The tool automatically aggregates global CEX market data & technical indicators for native coins.
-</analyze_market_rule>`;
+</analyze_market_rule>
+
+<x402_payment_rule>
+CRITICAL: If the user asks you to fetch data, invoke an agentic API, or access a resource that requires payment (or if you encounter an HTTP 402 Payment Required error), you MUST use the 'fetch_with_x402' tool.
+The 'fetch_with_x402' tool will autonomously negotiate the x402 payment, execute the crypto transaction via the Policy Engine, and retry the request to fetch the unlocked data.
+</x402_payment_rule>`;
     } else {
       const workDirRule = workDir
         ? `<working_directory_rule>

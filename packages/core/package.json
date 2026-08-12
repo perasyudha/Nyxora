@@ -1,6 +1,6 @@
 {
   "name": "nyxora-agent-core",
-  "version": "26.8.9",
+  "version": "26.8.12",
   "private": true,
   "main": "src/gateway/server.ts",
   "dependencies": {
