@@ -725,14 +725,7 @@ Do NOT output filler text like "Wait, I will check". Act now.`;
             continue;
           } else {
             console.error(`[Web3AgentStream] ❌ LLM (${config.llm.provider}) failed to recover after prefill + ${maxNudgesW} nudges. Aborting.`);
-            const reasoningContent = (responseMessage as any).reasoning_content || '';
-            if (reasoningContent && reasoningContent.length > 50) {
-              console.warn('[Web3AgentStream] Using reasoning_content as fallback response.');
-              finalContent = reasoningContent.replace(/<(think|thought|thinking)[\s\S]*?<\/\1>/gi, '').trim()
-                || '⚠️ I encountered an issue processing your request. This can happen with very complex multi-step tasks. Please try rephrasing or breaking the request into smaller steps.';
-            } else {
-              finalContent = '⚠️ I encountered an issue processing your request. This can happen with very complex multi-step tasks. Please try rephrasing or breaking the request into smaller steps.';
-            }
+            finalContent = '⚠️ I encountered an issue processing your request. This can happen with very complex multi-step tasks. Please try rephrasing or breaking the request into smaller steps.';
           }
         }
         // Reset prefill counter on successful response

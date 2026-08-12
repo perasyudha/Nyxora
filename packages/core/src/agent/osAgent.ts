@@ -342,6 +342,9 @@ The user explicitly stated your previous response was WRONG, STALE, or INACCURAT
     let accumulatedResults: string[] = [];
     let canFastReturnAll = true;
 
+    let nudgeCount = 0;
+    let thinkingPrefillRetries = 0;
+
     while (turnCount < MAX_TURNS) {
       turnCount++;
       // Reset per-turn accumulators
@@ -582,15 +585,50 @@ The user explicitly stated your previous response was WRONG, STALE, or INACCURAT
         responseMessage.content = responseMessage.content.trim();
         cleanedContent = responseMessage.content;
       }
-      // -----------------------------------------------------
-
       if (!responseMessage.tool_calls || responseMessage.tool_calls.length === 0) {
-        // --- CRITIC PASS REMOVED ---
-        // The new PromptBuilder handles robust reasoning. Post-generation critic
-        // causes aggressive loops and UI artifacts.
+        // Support global languages: English, Indonesian, Spanish, French, German filler words
+        const isConversationalFiller = cleanedContent.length > 0 && cleanedContent.length < 250 && /(wait|checking|executing|processing|give me a moment|let me check|one moment|hold on|tunggu|sebentar|lagi proses|lanjut cek|gue cek|aku cek|un momento|attendez|bitte warten)[\s\.\!a-z]*$/i.test(cleanedContent.trim());
+
+        if (!cleanedContent || isConversationalFiller) {
+          const hasNativeReasoning = !!(responseMessage as any).reasoning_content;
+          const isThinkOnlyResponse = hasNativeReasoning && !cleanedContent;
+
+          const maxPrefillRetries = (config.llm.provider === 'gemini') ? 4 : 2;
+          if (isThinkOnlyResponse && thinkingPrefillRetries < maxPrefillRetries) {
+            thinkingPrefillRetries++;
+            console.warn(`[OsAgent] ⚠️ Think-only silent stop — prefilling to continue (${thinkingPrefillRetries}/${maxPrefillRetries})...`);
+            continue;
+          }
+
+          const maxNudges = (config.llm.provider === 'gemini') ? 5 : 3;
+          if (nudgeCount < maxNudges) {
+            nudgeCount++;
+            const recentUserMsg = logger.getHistory(sessionId).filter((m: any) => m.role === 'user').slice(-1)[0]?.content || 'the user request';
+
+            let nudgeContent: string;
+            if (isThinkOnlyResponse) {
+              console.warn(`[OsAgent] ⚠️ Think-only prefill exhausted. System nudge (${nudgeCount}/${maxNudges})...`);
+              nudgeContent = `[SYSTEM NUDGE ${nudgeCount}/${maxNudges} — SILENT STOP DETECTED]\nYou completed your internal reasoning but produced NO output (no tool call, no text).\nThis is a silent stop — it is not acceptable.\nTask: "${(typeof recentUserMsg === 'string' ? recentUserMsg : JSON.stringify(recentUserMsg)).substring(0, 200)}"\nYou MUST act RIGHT NOW. Output a tool call or a final text answer. Do NOT think again.`;
+            } else {
+              console.warn(`[OsAgent] ⚠️ Empty or filler response. System nudge (${nudgeCount}/${maxNudges})...`);
+              nudgeContent = `[SYSTEM NUDGE ${nudgeCount}/${maxNudges}] Your last response was empty or contained conversational filler without tool calls. You MUST take action now.\nTask: "${(typeof recentUserMsg === 'string' ? recentUserMsg : JSON.stringify(recentUserMsg)).substring(0, 200)}"\nYou MUST either call a tool or output a complete text answer.`;
+            }
+
+            logger.addEntry({ role: 'system' as any, content: nudgeContent }, sessionId);
+            loopMessages.push({ role: 'system' as any, content: nudgeContent });
+            continue;
+          } else {
+            console.warn(`[OsAgent] ⚠️ LLM failed to recover after nudges. Using fallback.`);
+            triggerBackgroundReview(sessionId);
+            clearSessionFailures(sessionId || 'default');
+            return '⚠️ I encountered an issue processing your request. This can happen with very complex multi-step tasks. Please try rephrasing or breaking the request into smaller steps.';
+          }
+        }
+
+        thinkingPrefillRetries = 0;
         triggerBackgroundReview(sessionId);
         clearSessionFailures(sessionId || 'default');
-        return cleanedContent || '⚠️ I encountered an issue processing your request. This can happen with very complex multi-step tasks. Please try rephrasing or breaking the request into smaller steps.';
+        return cleanedContent;
       }
 
       // ── TOOL EXECUTION: parallel for read-only tools, serial for write tools ──
@@ -1109,15 +1147,7 @@ Do NOT output filler text like "Wait, I will check". Act now.`;
 
           } else {
             console.warn(`[OsAgentStream] ⚠️ LLM (${config.llm.provider}) failed to recover after prefill + ${maxNudges} nudges. Using fallback.`);
-            // Last-resort recovery: surface reasoning_content if available
-            const reasoningContent = (responseMessage as any).reasoning_content || '';
-            if (reasoningContent && reasoningContent.length > 50) {
-              console.warn('[OsAgentStream] Using reasoning_content as fallback response.');
-              finalContent = reasoningContent.replace(/<(think|thought|thinking)[\s\S]*?<\/\1>/gi, '').trim()
-                || '⚠️ I encountered an issue processing your request. This can happen with very complex multi-step tasks. Please try rephrasing or breaking the request into smaller steps.';
-            } else {
-              finalContent = '⚠️ I encountered an issue processing your request. This can happen with very complex multi-step tasks. Please try rephrasing or breaking the request into smaller steps.';
-            }
+            finalContent = '⚠️ I encountered an issue processing your request. This can happen with very complex multi-step tasks. Please try rephrasing or breaking the request into smaller steps.';
           }
         }
         // Reset prefill counter on successful response

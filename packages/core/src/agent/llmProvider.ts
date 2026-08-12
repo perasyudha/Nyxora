@@ -82,24 +82,18 @@ export function extractExecuteTool(content: string, existingToolCalls: any[]): {
  * and truncate the text the moment we detect ≥2 consecutive repetitions.
  */
 export function deduplicateRepetitions(text: string): string {
-  // Normalize: collapse multiple newlines so sentence detection works better
+  if (!text || text.length < 20) return text;
   let result = text;
-
-  // Pass 1: sentence-level repetition (anything ending with . ! ?)
-  // Split into "sentences" while preserving delimiters
-  const sentenceSplitRe = /([^.!?\n]{6,}[.!?\n])\s*/g;
-  const seenSentences = new Set<string>();
-  const outputSentences: string[] = [];
-  let lastIndex = 0;
-  let matchArr: RegExpExecArray | null;
   let repetitionDetected = false;
 
-  // We operate on a clean version for matching but track position in original
+  // Pass 1: sentence-level repetition (anything ending with . ! ?)
+  const sentenceSplitRe = /([^.!?\n]{6,}[.!?\n])\s*/g;
+  const seenSentences = new Set<string>();
+  let matchArr: RegExpExecArray | null;
   sentenceSplitRe.lastIndex = 0;
   while ((matchArr = sentenceSplitRe.exec(result)) !== null) {
     const sentence = matchArr[1].trim().toLowerCase();
     if (seenSentences.has(sentence)) {
-      // Found a repeated sentence — truncate here
       result = result.slice(0, matchArr.index).trimEnd();
       repetitionDetected = true;
       break;
@@ -107,24 +101,47 @@ export function deduplicateRepetitions(text: string): string {
     seenSentences.add(sentence);
   }
 
-  // Pass 2: clause-level — catch "prima dan tidak ada beban. tidak ada beban. beban." style
-  // Split on comma/semicolon/period boundaries, check for repeating tail segments
+  // Pass 2: clause-level — catch progressive truncation like "tidak ada beban. ada beban. beban."
   if (!repetitionDetected) {
     const clauses = result.split(/[,;.\n]+/).map(c => c.trim()).filter(c => c.length > 5);
     for (let i = 1; i < clauses.length; i++) {
       const cur = clauses[i].toLowerCase();
-      // Check if it's a suffix of the previous clause (progressive truncation repetition)
       const prev = clauses[i - 1].toLowerCase();
       if (prev.includes(cur) && cur.length > 5) {
-        // Find where the repetition starts in the result string and truncate
         const curIndex = result.lastIndexOf(clauses[i]);
         if (curIndex > 0) {
           result = result.slice(0, curIndex).trimEnd();
-          // Clean up trailing punctuation clutter
           result = result.replace(/[,;. ]+$/, '') + '.';
+          repetitionDetected = true;
           break;
         }
       }
+    }
+  }
+
+  // Pass 3: sliding n-gram window — catches mid-sentence word-group loops
+  // e.g. "bakal ketutup lho bakal ketutup" or "yang mau aku shutdown yang mau aku"
+  if (!repetitionDetected) {
+    const words = result.split(/\s+/);
+    const totalWords = words.length;
+    // Check windows of 3..8 words
+    for (let windowSize = 3; windowSize <= 8; windowSize++) {
+      for (let i = 0; i <= totalWords - windowSize * 2; i++) {
+        const window1 = words.slice(i, i + windowSize).join(' ').toLowerCase();
+        const window2 = words.slice(i + windowSize, i + windowSize * 2).join(' ').toLowerCase();
+        if (window1 === window2) {
+          // Repetition found — rebuild result from words up to start of 2nd occurrence
+          const cutPoint = words.slice(0, i + windowSize).join(' ');
+          // Only truncate if there's actually trailing junk after the 1st occurrence
+          if (cutPoint.length < result.length - 5) {
+            result = cutPoint.trimEnd();
+            if (!/[.!?]$/.test(result)) result += '.';
+            repetitionDetected = true;
+          }
+          break;
+        }
+      }
+      if (repetitionDetected) break;
     }
   }
 

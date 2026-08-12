@@ -48,6 +48,13 @@ export function stripThinkBlocks(text: string, platform?: string): string {
     cleaned = cleaned.replace(closeRegex, '');
   }
 
+  // 4. Strip Gemini bracket-style meta-planning labels that leak into visible output.
+  // e.g. "[Self-Correction] ...", "[Action] ...", "[User provided details] ..."
+  // These are internal monologue markers the model emits in its text instead of using <think> tags.
+  // Match a line that starts with [LABEL] where LABEL is a known internal planning word.
+  const LEAKED_LABEL_RE = /^\s*\[(Self-Correction|Action|User provided details|User Details|Reasoning|Internal Thought|Thought|Planning|Analysis|Reflection|SYSTEM NUDGE[^\]]*)\][^\n]*/gim;
+  cleaned = cleaned.replace(LEAKED_LABEL_RE, '').replace(/\n{3,}/g, '\n\n');
+
   return cleaned.trim();
 }
 
