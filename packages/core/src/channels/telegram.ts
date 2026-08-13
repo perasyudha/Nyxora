@@ -368,8 +368,17 @@ function createStreamBubble(ctx: any, replyToMsgId?: number): StreamBubble {
       if (chunk === '[TOOL_CALL_DETECTED]') {
         if (pendingFlushTimer) { clearTimeout(pendingFlushTimer); pendingFlushTimer = null; }
 
-        // Flush and finalize any conversational text (initial preamble or failure recovery text)
-        await finalizeBuffer();
+        // Guard: Claude sometimes streams a trivial preamble ("...", "…", whitespace)
+        // before emitting a tool_use block. Don't create an empty-looking bubble for it.
+        const visibleContent = buffer.replace(/[\s.…·\-_]+/g, '').trim();
+        if (visibleContent.length < 4) {
+          // Discard the trivial preamble — don't send it as a bubble
+          buffer = '';
+          textMsgId = null;
+        } else {
+          // Flush and finalize any meaningful conversational text
+          await finalizeBuffer();
+        }
         
         // Create or reset Bubble B with ⏳
         // This is the first time Bubble B appears — always AFTER the previous text was finalized
@@ -401,23 +410,21 @@ function createStreamBubble(ctx: any, replyToMsgId?: number): StreamBubble {
   };
 
   // ── Public: onProgress ─────────────────────────────────────────────────────
-  // Creates a new bubble per distinct tool call so each tool action is
-  // visible as its own message (intended UX for multi-step tool chains).
+  // Each tool call gets its own fresh bubble — ⏳ Processing... stays as-is.
   const onProgress = (msg: string): void => {
     enqueue(async () => {
       if (isFinalized) return;
       if (pendingFlushTimer) { clearTimeout(pendingFlushTimer); pendingFlushTimer = null; }
       const newHtml = formatToTelegramHTML(msg);
-      if (lastProgressHtml === '⏳ Processing...') {
-        // First tool call of this turn: edit the ⏳ placeholder in place
-        await editProgressBubble(newHtml);
-      } else {
-        // Subsequent tool calls: send a new bubble so each tool is visible
-        const newMsgId = await sendNew(newHtml);
-        if (newMsgId) {
-          progressMsgId = newMsgId;
-          lastProgressHtml = newHtml;
-        }
+      // Always send a new bubble — never edit the ⏳ Processing... placeholder.
+      // This gives a clear visual timeline:
+      //   [⏳ Processing...]
+      //   [💻 terminal\ncurl ...]
+      //   [🔍 Searching for: ...]
+      const newMsgId = await sendNew(newHtml);
+      if (newMsgId) {
+        progressMsgId = newMsgId;
+        lastProgressHtml = newHtml;
       }
     });
   };

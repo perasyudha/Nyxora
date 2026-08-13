@@ -144,6 +144,7 @@ const triggerBackgroundReview = async (sessionId?: string) => {
 
 
 import { getOpenAI, executeWithRetry, isLocalProvider } from '../utils/llmUtils';
+import { deduplicateRepetitions } from './llmProvider';
 
 /**
  * Robust JSON repair for small/local model tool arguments.
@@ -213,15 +214,24 @@ function sanitizeLabel(text: string): string {
 
 function getToolLabel(n: string, firstArgValue: string, rawArgs?: any): string {
   const safeArg = firstArgValue ? sanitizeLabel(String(firstArgValue)) : '';
-  if (n === 'run_terminal_command' || n === 'run_terminal_command_pty') return `💻 terminal\n\`\`\`shell\n${safeArg.substring(0, 100)}${safeArg.length > 100 ? '...' : ''}\n\`\`\``;
+  if (n === 'run_terminal_command' || n === 'run_terminal_command_pty') {
+    // Always use rawArgs?.command explicitly — firstArgValue may be 'envType' or 'dockerImage'
+    // if the LLM serialises those keys first, causing the label to show 'local' instead of the command.
+    const cmd = sanitizeLabel(String(rawArgs?.command || firstArgValue || ''));
+    return `💻 terminal\n\`\`\`shell\n${cmd.substring(0, 100)}${cmd.length > 100 ? '...' : ''}\n\`\`\``;
+  }
   const fileArg = rawArgs?.filePath || rawArgs?.path || rawArgs?.file || safeArg;
   if (n === 'write_local_file') return `✍️ Writing ${fileArg ? String(fileArg).split('/').pop() : 'file'}...`;
   if (n === 'read_local_file') return `📖 Reading ${fileArg ? String(fileArg).split('/').pop() : 'file'}...`;
   if (n === 'edit_local_file') return `✏️ Editing ${fileArg ? String(fileArg).split('/').pop() : 'file'}...`;
-  if (n === 'search_web' || n === 'search_files') return `🔍 Searching for: ${safeArg.substring(0, 50)}...`;
+  if (n === 'search_web' || n === 'search_files') {
+    // Explicitly read 'query' / 'q' keys — firstArgValue may be a different key (e.g. 'engine').
+    const query = sanitizeLabel(String(rawArgs?.query || rawArgs?.q || firstArgValue || ''));
+    return `🔍 Searching for: ${query.substring(0, 120)}${query.length > 120 ? '...' : ''}`;
+  }
   if (n === 'todo_write' || n === 'todo_read') return `📋 Task tracker: ${n}`;
   if (n === 'send_telegram_file') return `📤 Sending file to Telegram...`;
-  if (n.includes('git')) return `🐙 Git: ${safeArg.substring(0, 50)}`;
+  if (n.includes('git')) return `🐙 Git: ${safeArg.substring(0, 80)}${safeArg.length > 80 ? '...' : ''}`;
   if (n === 'generate_image') return `🎨 Generating image...`;
   if (n === 'analyze_local_image') return `👁️ Analyzing image...`;
   if (n === 'computer') {
@@ -1153,6 +1163,20 @@ Do NOT output filler text like "Wait, I will check". Act now.`;
         // Reset prefill counter on successful response
         thinkingPrefillRetries = 0;
 
+        // ── REPETITION SCRUB (Gemini end-of-stream loop fix) ──────────────
+        // Gemini sometimes emits repeated suffix phrases at end of stream
+        // (e.g. "fair. fair. fair.") that pass through chunk-level scrubbers.
+        // Deduplicate on the complete finalContent and re-emit if changed.
+        const dedupedContent = deduplicateRepetitions(finalContent);
+        if (dedupedContent !== finalContent) {
+          console.warn(`[OsAgentStream] ⚠️ Gemini repetition detected & truncated.`);
+          finalContent = dedupedContent;
+          // Re-emit the corrected version — CLEAR_STREAM resets the Telegram bubble
+          // so it shows the clean text instead of the looping one.
+          await onChunk('[CLEAR_STREAM]');
+          await onChunk(finalContent);
+        }
+
         fullResponse = finalContent;
         triggerBackgroundReview(sessionId);
 
@@ -1239,12 +1263,15 @@ Do NOT output filler text like "Wait, I will check". Act now.`;
           // Skip progress notification for silent background tools
           if (SILENT_TOOLS.has(tc.function.name)) return;
           let firstArgValue = '';
+          let parsedPreview: any = {};
           try {
-            const parsedPreview = JSON.parse(tc.function.arguments || '{}');
+            parsedPreview = JSON.parse(tc.function.arguments || '{}');
             const firstKey = Object.keys(parsedPreview)[0];
             if (firstKey) firstArgValue = String(parsedPreview[firstKey]);
           } catch { /* ignore */ }
-          onProgress(getToolLabel(tc.function.name, firstArgValue));
+          // FIX: pass parsedPreview as rawArgs so getToolLabel can look up
+          // rawArgs?.command / rawArgs?.query explicitly (prevents 'local' / wrong-key bugs).
+          onProgress(getToolLabel(tc.function.name, firstArgValue, parsedPreview));
         });
       }
 

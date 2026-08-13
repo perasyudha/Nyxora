@@ -145,6 +145,31 @@ export function deduplicateRepetitions(text: string): string {
     }
   }
 
+  // Pass 4: tail-repetition detector — catches Gemini's end-of-stream suffix loops
+  // e.g. "...harga 3.5 juta itu fair.5, harga 3.5 juta itu fair."
+  // These are missed by Pass 1 (decimal points fool sentence splitter) and
+  // Pass 3 (punctuation inside the repeated segment breaks word-boundary match).
+  if (!repetitionDetected) {
+    const tail = result.slice(-300); // only inspect the last 300 chars — loops happen at end
+    for (let phraseLen = 10; phraseLen <= 150; phraseLen++) {
+      if (phraseLen * 2 > tail.length) break;
+      const candidate = tail.slice(-phraseLen);
+      const preceding = tail.slice(-(phraseLen * 2), -phraseLen);
+      // Normalize both: lowercase + collapse whitespace for comparison
+      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+      if (norm(candidate) === norm(preceding)) {
+        // Find where the first repetition starts in the original full text
+        const firstOccurrenceEnd = result.length - phraseLen;
+        if (firstOccurrenceEnd > 0) {
+          result = result.slice(0, firstOccurrenceEnd).trimEnd();
+          if (result && !/[.!?]$/.test(result)) result += '.';
+          repetitionDetected = true;
+        }
+        break;
+      }
+    }
+  }
+
   return result;
 }
 
