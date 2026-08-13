@@ -76,102 +76,44 @@ export function extractExecuteTool(content: string, existingToolCalls: any[]): {
 /**
  * Detects and removes repetition loops that Gemini sometimes emits at end-of-stream.
  * Examples caught:
- *   "...PC kamu sehat. PC kamu sehat. PC kamu sehat."
- *   "...tidak ada kendala. tidak ada kendala. ada kendala. kendala."
- * Strategy: slide a window of decreasing phrase sizes (sentence → clause → word-group)
- * and truncate the text the moment we detect ≥2 consecutive repetitions.
+ *   "...your PC is healthy. your PC is healthy. your PC is healthy."
+ *   "...the price of 3.5k is fair.5, the price of 3.5k is fair."
+ * 
+ * Strategy: We only check the tail of the string (last 400 chars) for CONSECUTIVE 
+ * repeated blocks. We do NOT use global sentence tracking, as that causes false 
+ * positives on perfectly valid structured data (e.g., multiple "Net Worth: $0.00" 
+ * lines in a portfolio).
  */
 export function deduplicateRepetitions(text: string): string {
   if (!text || text.length < 20) return text;
   let result = text;
-  let repetitionDetected = false;
 
-  // Pass 1: sentence-level repetition (anything ending with . ! ?)
-  const sentenceSplitRe = /([^.!?\n]{6,}[.!?\n])\s*/g;
-  const seenSentences = new Set<string>();
-  let matchArr: RegExpExecArray | null;
-  sentenceSplitRe.lastIndex = 0;
-  while ((matchArr = sentenceSplitRe.exec(result)) !== null) {
-    const sentence = matchArr[1].trim().toLowerCase();
-    if (seenSentences.has(sentence)) {
-      result = result.slice(0, matchArr.index).trimEnd();
-      repetitionDetected = true;
+  // Tail-repetition detector — catches Gemini's end-of-stream suffix loops
+  // We check phrase lengths from 10 up to 200 characters.
+  const tail = result.slice(-400); 
+  for (let phraseLen = 10; phraseLen <= 200; phraseLen++) {
+    if (phraseLen * 2 > tail.length) break;
+    const candidate = tail.slice(-phraseLen);
+    const preceding = tail.slice(-(phraseLen * 2), -phraseLen);
+    
+    // Normalize both: lowercase + collapse whitespace for comparison
+    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+    
+    if (norm(candidate) === norm(preceding)) {
+      // Find where the first repetition starts in the original full text
+      const firstOccurrenceEnd = result.length - phraseLen;
+      if (firstOccurrenceEnd > 0) {
+        result = result.slice(0, firstOccurrenceEnd).trimEnd();
+        if (result && !/[.!?]$/.test(result)) result += '.';
+      }
       break;
-    }
-    seenSentences.add(sentence);
-  }
-
-  // Pass 2: clause-level — catch progressive truncation like "tidak ada beban. ada beban. beban."
-  if (!repetitionDetected) {
-    const clauses = result.split(/[,;.\n]+/).map(c => c.trim()).filter(c => c.length > 5);
-    for (let i = 1; i < clauses.length; i++) {
-      const cur = clauses[i].toLowerCase();
-      const prev = clauses[i - 1].toLowerCase();
-      if (prev.includes(cur) && cur.length > 5) {
-        const curIndex = result.lastIndexOf(clauses[i]);
-        if (curIndex > 0) {
-          result = result.slice(0, curIndex).trimEnd();
-          result = result.replace(/[,;. ]+$/, '') + '.';
-          repetitionDetected = true;
-          break;
-        }
-      }
-    }
-  }
-
-  // Pass 3: sliding n-gram window — catches mid-sentence word-group loops
-  // e.g. "bakal ketutup lho bakal ketutup" or "yang mau aku shutdown yang mau aku"
-  if (!repetitionDetected) {
-    const words = result.split(/\s+/);
-    const totalWords = words.length;
-    // Check windows of 3..8 words
-    for (let windowSize = 3; windowSize <= 8; windowSize++) {
-      for (let i = 0; i <= totalWords - windowSize * 2; i++) {
-        const window1 = words.slice(i, i + windowSize).join(' ').toLowerCase();
-        const window2 = words.slice(i + windowSize, i + windowSize * 2).join(' ').toLowerCase();
-        if (window1 === window2) {
-          // Repetition found — rebuild result from words up to start of 2nd occurrence
-          const cutPoint = words.slice(0, i + windowSize).join(' ');
-          // Only truncate if there's actually trailing junk after the 1st occurrence
-          if (cutPoint.length < result.length - 5) {
-            result = cutPoint.trimEnd();
-            if (!/[.!?]$/.test(result)) result += '.';
-            repetitionDetected = true;
-          }
-          break;
-        }
-      }
-      if (repetitionDetected) break;
-    }
-  }
-
-  // Pass 4: tail-repetition detector — catches Gemini's end-of-stream suffix loops
-  // e.g. "...harga 3.5 juta itu fair.5, harga 3.5 juta itu fair."
-  // These are missed by Pass 1 (decimal points fool sentence splitter) and
-  // Pass 3 (punctuation inside the repeated segment breaks word-boundary match).
-  if (!repetitionDetected) {
-    const tail = result.slice(-300); // only inspect the last 300 chars — loops happen at end
-    for (let phraseLen = 10; phraseLen <= 150; phraseLen++) {
-      if (phraseLen * 2 > tail.length) break;
-      const candidate = tail.slice(-phraseLen);
-      const preceding = tail.slice(-(phraseLen * 2), -phraseLen);
-      // Normalize both: lowercase + collapse whitespace for comparison
-      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
-      if (norm(candidate) === norm(preceding)) {
-        // Find where the first repetition starts in the original full text
-        const firstOccurrenceEnd = result.length - phraseLen;
-        if (firstOccurrenceEnd > 0) {
-          result = result.slice(0, firstOccurrenceEnd).trimEnd();
-          if (result && !/[.!?]$/.test(result)) result += '.';
-          repetitionDetected = true;
-        }
-        break;
-      }
     }
   }
 
   return result;
 }
+
+
 
 function sanitizeOpenAIMessages(messages: any[]): any[] {
   if (!Array.isArray(messages)) return messages;

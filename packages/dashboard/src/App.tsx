@@ -2,8 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Square, Settings as SettingsIcon, Brain, Cpu, MessageSquare, Plus, Trash2, Code, Shield, Network, Terminal, RefreshCw, Send, Image as ImageIcon, Sparkles, Edit2, Zap, ArrowRight, Wallet, Check, AlertTriangle, Bot, Activity, Database, Mic, Copy, Search, LayoutDashboard, Key, Server, Sun, Moon, Monitor, PanelLeftClose, PanelLeftOpen, Paperclip, Loader2, BookOpen, Folder, Clock, Plug, Link, User, Landmark, LineChart, TrendingUp, Router, Share2, Pencil, X, Menu } from 'lucide-react';
 
 import NyxoraLogo from './NyxoraLogo';
-import { NetworkSelector } from './NetworkSelector';
-import { RouterSelector } from './RouterSelector';
+
 import ReconnectOverlay from './components/ReconnectOverlay';
 import Login from './Login';
 import { apiFetch } from './utils/api';
@@ -379,19 +378,8 @@ function App() {
               <span style={{ color: '#f59e0b', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span className="dot" style={{ background: '#f59e0b', animation: 'pulse 1s infinite' }}></span> Waiting for API Gateway...
               </span>
-            ) : (
-              <>
-                <NetworkSelector 
-                  value={config.agent.default_chain} 
-                  onChange={(chain) => updateConfig({ ...config, agent: { ...config.agent, default_chain: chain }})} 
-                  showAllOption={true}
-                />
-                <RouterSelector 
-                  value={config.agent.default_router || 'auto'} 
-                  onChange={(router) => updateConfig({ ...config, agent: { ...config.agent, default_router: router }})} 
-                />
-              </>
-            )}
+            ) : null}
+
           </div>
         </header>
 

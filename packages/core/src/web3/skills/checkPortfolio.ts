@@ -97,6 +97,44 @@ export async function checkPortfolio(chainName: ChainName, address?: `0x${string
       }
     }
 
+    // Merge Flexible Auto-Detect (Rabby Wallet style via Blockscout V2)
+    // This fetches all ERC-20 tokens the user ACTUALLY holds instead of just guessing
+    const BLOCKSCOUT_DOMAINS: Record<string, string> = {
+      ethereum: 'https://eth.blockscout.com',
+      base: 'https://base.blockscout.com',
+      optimism: 'https://optimism.blockscout.com',
+      arbitrum: 'https://arbitrum.blockscout.com',
+      polygon: 'https://polygon.blockscout.com',
+      sepolia: 'https://eth-sepolia.blockscout.com',
+      robinhood: 'https://robinhoodchain.blockscout.com',
+    };
+    
+    const blockscoutDomain = BLOCKSCOUT_DOMAINS[chainName];
+    if (blockscoutDomain) {
+      try {
+        const explorerUrl = `${blockscoutDomain}/api/v2/addresses/${targetAddress}/token-balances`;
+        const { safeFetchJson } = await import('../../utils/httpClient');
+        const tokenBalances = await safeFetchJson<any[]>(explorerUrl);
+        
+        if (Array.isArray(tokenBalances)) {
+          for (const item of tokenBalances) {
+            const token = item.token;
+            if (token && token.type === 'ERC-20' && token.address_hash) {
+              if (!tokensToScan.find(t => String(t.address).toLowerCase() === String(token.address_hash).toLowerCase())) {
+                tokensToScan.push({ 
+                  symbol: token.symbol || 'Token', 
+                  address: token.address_hash as `0x${string}`, 
+                  isNative: false 
+                });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[checkPortfolio] Flexible Auto-detect failed for ${chainName}:`, err);
+      }
+    }
+
     const testnetWarning = isTestnet
       ? `\n> ⚠️ **Testnet Mode** — USD prices are not available for testnet tokens. Only native ETH balances are real.\n`
       : '';

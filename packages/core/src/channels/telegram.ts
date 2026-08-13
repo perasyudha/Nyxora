@@ -154,6 +154,13 @@ function createStreamBubble(ctx: any, replyToMsgId?: number): StreamBubble {
   const MAX_RETRIES = 3;
   const TELEGRAM_MAX = 4000;
 
+  // ── Typing indicator — refreshed every 4.5s (Telegram clears it after 5s) ──
+  let typingInterval: NodeJS.Timeout | null = setInterval(() => {
+    ctx.api.sendChatAction(ctx.chat.id, 'typing').catch(() => {});
+  }, 4500);
+  // Send immediately on start so it shows up right away
+  ctx.api.sendChatAction(ctx.chat.id, 'typing').catch(() => {});
+
   // ── Async queue — all state mutations run here, one at a time ──────────────
   const opQueue: (() => Promise<void>)[] = [];
   let draining = false;
@@ -365,6 +372,14 @@ function createStreamBubble(ctx: any, replyToMsgId?: number): StreamBubble {
         return;
       }
 
+      if (chunk === '[REPLACE_STREAM]') {
+        // Clear buffer but keep textMsgId intact so we REPLACE the current text
+        // in the existing Telegram bubble instead of creating a duplicate.
+        if (pendingFlushTimer) { clearTimeout(pendingFlushTimer); pendingFlushTimer = null; }
+        buffer = '';
+        return;
+      }
+
       if (chunk === '[TOOL_CALL_DETECTED]') {
         if (pendingFlushTimer) { clearTimeout(pendingFlushTimer); pendingFlushTimer = null; }
 
@@ -410,21 +425,28 @@ function createStreamBubble(ctx: any, replyToMsgId?: number): StreamBubble {
   };
 
   // ── Public: onProgress ─────────────────────────────────────────────────────
-  // Each tool call gets its own fresh bubble — ⏳ Processing... stays as-is.
+  // Creates a new bubble per distinct tool call so each tool action is
+  // visible as its own message (intended UX for multi-step tool chains).
   const onProgress = (msg: string): void => {
     enqueue(async () => {
       if (isFinalized) return;
       if (pendingFlushTimer) { clearTimeout(pendingFlushTimer); pendingFlushTimer = null; }
       const newHtml = formatToTelegramHTML(msg);
-      // Always send a new bubble — never edit the ⏳ Processing... placeholder.
-      // This gives a clear visual timeline:
-      //   [⏳ Processing...]
-      //   [💻 terminal\ncurl ...]
-      //   [🔍 Searching for: ...]
-      const newMsgId = await sendNew(newHtml);
-      if (newMsgId) {
-        progressMsgId = newMsgId;
-        lastProgressHtml = newHtml;
+      
+      if (newHtml === lastProgressHtml) {
+        return; // Prevent spamming duplicate bubbles (e.g. 6x check_portfolio)
+      }
+      
+      if (lastProgressHtml === '⏳ Processing...') {
+        // First tool call of this turn: edit the ⏳ placeholder in place
+        await editProgressBubble(newHtml);
+      } else {
+        // Subsequent tool calls: send a new bubble so each tool is visible
+        const newMsgId = await sendNew(newHtml);
+        if (newMsgId) {
+          progressMsgId = newMsgId;
+          lastProgressHtml = newHtml;
+        }
       }
     });
   };
@@ -490,7 +512,9 @@ function createStreamBubble(ctx: any, replyToMsgId?: number): StreamBubble {
   // ── Public: dispose — clean up timers ─────────────────────────────────────
   const dispose = (): void => {
     if (pendingFlushTimer) { clearTimeout(pendingFlushTimer); pendingFlushTimer = null; }
+    if (typingInterval) { clearInterval(typingInterval); typingInterval = null; }
   };
+
 
   return { onChunk, onProgress, markFinalized, sendFinal, dispose };
 }
@@ -607,7 +631,7 @@ export function startTelegramBot() {
       const text = ctx.message.text;
       if (text.startsWith('/')) return;
       console.log(`[Telegram] Received from ${ctx.from?.first_name || 'User'}: ${text}`);
-      await ctx.replyWithChatAction('typing');
+      await ctx.replyWithChatAction('typing').catch(() => {});
 
       const threadId = ctx.message.message_thread_id ? `_${ctx.message.message_thread_id}` : '';
       const sessionId = `telegram_${ctx.chat?.id}${threadId}`;
@@ -653,7 +677,7 @@ export function startTelegramBot() {
       console.log(`[Telegram] User clicked ${simulatedText.toUpperCase()} via Inline Keyboard`);
 
       if (!ctx.chat) return;
-      await ctx.replyWithChatAction('typing');
+      await ctx.replyWithChatAction('typing').catch(() => {});
 
       const msg = ctx.callbackQuery.message as any;
       const threadId = msg?.message_thread_id ? `_${msg.message_thread_id}` : '';

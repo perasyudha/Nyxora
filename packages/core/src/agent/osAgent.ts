@@ -1171,9 +1171,9 @@ Do NOT output filler text like "Wait, I will check". Act now.`;
         if (dedupedContent !== finalContent) {
           console.warn(`[OsAgentStream] ⚠️ Gemini repetition detected & truncated.`);
           finalContent = dedupedContent;
-          // Re-emit the corrected version — CLEAR_STREAM resets the Telegram bubble
-          // so it shows the clean text instead of the looping one.
-          await onChunk('[CLEAR_STREAM]');
+          // Re-emit the corrected version — REPLACE_STREAM clears the buffer but 
+          // keeps the message ID so it edits the same bubble instead of duplicating.
+          await onChunk('[REPLACE_STREAM]');
           await onChunk(finalContent);
         }
 
