@@ -20,6 +20,18 @@ const MAX_TAG_LEN = Math.max(...[...OPEN_TAGS, ...CLOSE_TAGS].map(t => t.length)
 const PRESERVED_PLATFORMS = new Set(['dashboard', 'desktop', 'web', 'gui']);
 
 /**
+ * Returns a safe end-index for slicing `str` at `end`, ensuring we never
+ * cut in the middle of a UTF-16 surrogate pair (which would corrupt 4-byte emoji).
+ */
+function safeSliceEnd(str: string, end: number): number {
+  if (end <= 0 || end >= str.length) return end;
+  const c = str.charCodeAt(end - 1);
+  // If the last kept char is a HIGH surrogate (U+D800–U+DBFF), step back one
+  if (c >= 0xD800 && c <= 0xDBFF) return end - 1;
+  return end;
+}
+
+/**
  * Static helper to clean a complete, non-streaming string of any reasoning blocks,
  * unless the target platform is dashboard or desktop (where collapsible UI is rendered).
  */
@@ -135,8 +147,11 @@ export class StreamingThinkScrubber {
         const held = Math.max(heldOpen, heldClose);
 
         if (held > 0) {
-          const emitText = buf.slice(0, buf.length - held);
-          this.buf = buf.slice(buf.length - held);
+          // safeSliceEnd prevents cutting in the middle of a surrogate pair,
+          // which would turn 4-byte emoji (🎯 🚨 etc.) into U+FFFD replacement chars.
+          const safeEnd = safeSliceEnd(buf, buf.length - held);
+          const emitText = buf.slice(0, safeEnd);
+          this.buf = buf.slice(safeEnd);
           if (emitText) {
             const scrubbed = this.stripOrphanCloseTags(emitText);
             if (scrubbed) {

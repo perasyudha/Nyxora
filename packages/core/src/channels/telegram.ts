@@ -408,16 +408,15 @@ function createStreamBubble(ctx: any, replyToMsgId?: number): StreamBubble {
       }
 
       // Normal streaming text — accumulate and debounce-flush.
-      // scheduleFlush() internally routes to Bubble A.
+      // editTextBubble expects RAW MARKDOWN (it formats internally) — do NOT pre-format here.
       buffer = buffer ? buffer + chunk : chunk;
       if (!pendingFlushTimer && !isFinalized) {
         pendingFlushTimer = setTimeout(() => {
           pendingFlushTimer = null;
           enqueue(async () => {
             if (isFinalized) return;
-            const html = formatToTelegramHTML(buffer);
-            if (!html || !html.trim()) return;
-            await editTextBubble(html);
+            if (!buffer || !buffer.trim()) return;
+            await editTextBubble(buffer);
           });
         }, MIN_EDIT_MS);
       }

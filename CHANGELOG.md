@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - **Background Transactions**: Fixed Logger singleton scope mismatch in `confirmPendingTx.ts` which prevented limit order activation events from firing.
 - **Block Explorer Integrations**: Added missing Robinhood and BSC chain configurations to `getTxHistory.ts` and `checkPortfolio.ts`.
 - **Token Fetching**: Optimized `dynamicTokenUpdater.ts` to fetch lists in parallel with strict HTTP timeouts, significantly speeding up cold-starts. Refactored DexScreener pair selection to actively sort and pick highest-liquidity pairs instead of defaulting to the first index.
+- **LLM Streaming Integrity**: Fixed a widespread streaming corruption bug affecting OpenAI-compatible API providers (like NVIDIA NIM) where multi-byte unicode characters (emojis) were split across Server-Sent Events boundaries. Implemented a zero-width space (`\u200B`) filter in `llmProvider.ts` and surrogate logic in `thinkScrubber.ts` to guarantee clean Markdown rendering across the Dashboard and Telegram.
 
 ### Dashboard UI Enhancements
 - **Security Dashboard**: Integrated a new On-Chain Kill Switch interface in `Security.tsx` (`/api/registry`). The dashboard now natively displays the live Base Sepolia registry status (🟢 Active / 🔴 Blocked) and provides direct integration links to the Blockscout smart contract for real-time agent registration and kill-switch toggling.

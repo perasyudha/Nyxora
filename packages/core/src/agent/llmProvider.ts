@@ -287,14 +287,36 @@ export class OpenAIAdapter implements LLMProvider {
       let reasoningContent = '';
       const toolCallsMap: Record<number, any> = {};
       const toolInterceptor = new StreamingToolInterceptor();
+      // Surrogate-pair buffer: some OpenAI-compatible APIs (e.g. NVIDIA NIM) split
+      // 4-byte emoji across SSE token boundaries, sending lone surrogates in separate
+      // delta.content chunks. We hold a trailing high surrogate and prepend it to the
+      // next chunk before processing, so emoji always arrive intact.
+      let surrogateCarry = '';
 
       for await (const chunk of streamRes) {
         const delta = chunk.choices[0]?.delta;
         if (delta?.content) {
-          const safeText = toolInterceptor.feed(delta.content);
-          if (safeText) {
-            fullContent += safeText;
-            onChunk(safeText);
+          // Some backend APIs (like NVIDIA NIM) corrupt 4-byte emojis by splitting
+          // their UTF-8 bytes across SSE chunks, resulting in literal U+FFFD () chars.
+          // We replace these with a Zero-Width Space (\u200B) instead of an empty string,
+          // so we don't accidentally break Markdown formatting (e.g., `**🎯 Bullish**` -> `** Bullish**` fails to bold).
+          let cleanedContent = delta.content.replace(/\uFFFD/g, '\u200B');
+          
+          // Prepend any carried high surrogate from the previous chunk
+          let text: string = surrogateCarry + cleanedContent;
+          surrogateCarry = '';
+          // If this chunk ends with a lone high surrogate, hold it for the next chunk
+          const lastCode = text.charCodeAt(text.length - 1);
+          if (lastCode >= 0xD800 && lastCode <= 0xDBFF) {
+            surrogateCarry = text[text.length - 1];
+            text = text.slice(0, -1);
+          }
+          if (text) {
+            const safeText = toolInterceptor.feed(text);
+            if (safeText) {
+              fullContent += safeText;
+              onChunk(safeText);
+            }
           }
         }
         const rText = delta?.reasoning_content ||
@@ -317,6 +339,11 @@ export class OpenAIAdapter implements LLMProvider {
             }
           }
         }
+      }
+      // Flush any remaining carried surrogate (edge case: stream ended on a lone high surrogate)
+      if (surrogateCarry) {
+        const safeText = toolInterceptor.feed(surrogateCarry);
+        if (safeText) { fullContent += safeText; onChunk(safeText); }
       }
 
       const flushed = toolInterceptor.flush();
