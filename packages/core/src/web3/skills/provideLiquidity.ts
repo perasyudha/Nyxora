@@ -192,7 +192,16 @@ export async function prepareProvideLiquidity(
     }
 
     const tx = txManager.createPendingTransaction('univ3Mint', chainName, { 
-      positionManagerAddress, token0, token1, amount0, amount1, tickLower: tLower, tickUpper: tUpper,
+      positionManagerAddress,
+      token0, token1,
+      fee: feeTier,
+      tickLower: tLower, tickUpper: tUpper,
+      amount0Desired: amount0Wei.toString(),
+      amount1Desired: amount1Wei.toString(),
+      amount0Min: amount0Min.toString(),
+      amount1Min: amount1Min.toString(),
+      deadline: deadline.toString(),
+      recipient: account,
       gasEstimate: gasEstimate.toString()
     });
 

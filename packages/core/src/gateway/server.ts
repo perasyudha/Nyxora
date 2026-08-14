@@ -875,6 +875,15 @@ app.get('/api/status/lock', (req, res) => {
   res.json({ lastUnlockRequest });
 });
 
+app.get('/api/registry', async (req, res) => {
+  try {
+    const result = await checkRegistryStatus();
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/transactions', (req, res) => {
   res.json(txManager.getPending());
 });

@@ -46,7 +46,7 @@ export async function getPrice(coinId: string, currency?: string, amount?: numbe
       const headers = isPro ? { 'x-cg-pro-api-key': keys.coingecko_key } : undefined;
       const data = await safeFetchJson<any>(`${baseUrl}/simple/price?ids=tether&vs_currencies=${cur}`, { headers });
       if (data && data.tether && data.tether[cur]) return data.tether[cur];
-    } catch (e) {}
+    } catch (e) { console.warn('[getPrice] tier failed:', e); }
     // Tier 2 for Fiat: CoinMarketCap
     if (keys.cmc_key) {
       try {
@@ -55,7 +55,7 @@ export async function getPrice(coinId: string, currency?: string, amount?: numbe
         });
         const coinList = Object.values(data?.data || {});
         if (coinList[0] && (coinList[0] as any).quote[curUpper]) return (coinList[0] as any).quote[curUpper].price;
-      } catch (e) {}
+      } catch (e) { console.warn('[getPrice] tier failed:', e); }
     }
     return 0; 
   }
@@ -82,7 +82,7 @@ export async function getPrice(coinId: string, currency?: string, amount?: numbe
         tokenName = coin.symbol;
         source = 'CoinMarketCap Pro';
       }
-    } catch(e) {}
+    } catch(e) { console.warn('[getPrice] tier failed:', e); }
   }
 
   // TIER 2: CoinGecko (Token -> USD)
@@ -98,7 +98,7 @@ export async function getPrice(coinId: string, currency?: string, amount?: numbe
         change24h = data[coinId].usd_24h_change || 0;
         source = `CoinGecko ${isPro ? 'Pro' : 'Public'}`;
       }
-    } catch(e) {}
+    } catch(e) { console.warn('[getPrice] tier failed:', e); }
   }
 
   // TIER 3: Nyxora Python ML Engine (For obscure/low-cap DEX tokens)
@@ -111,21 +111,30 @@ export async function getPrice(coinId: string, currency?: string, amount?: numbe
         tokenName = mlData.officialSymbol || coinId.toUpperCase();
         source = 'ML Engine (On-Chain/DEX Routing)';
       }
-    } catch(e) {}
+    } catch(e) { console.warn('[getPrice] tier failed:', e); }
   }
 
   // TIER 4: DexScreener (Direct CA or Symbol Search)
   if (tokenUsdPrice === 0) {
     try {
       const data = await safeFetchJson<any>(`https://api.dexscreener.com/latest/dex/search?q=${coinId}`);
-      if (data.pairs && data.pairs.length > 0) {
-        const pair = data.pairs[0];
-        tokenUsdPrice = Number(pair.priceUsd);
-        change24h = pair.priceChange?.h24 || 0;
-        tokenName = pair.baseToken.symbol;
-        source = 'DexScreener';
+      if (data?.pairs && Array.isArray(data.pairs) && data.pairs.length > 0) {
+        // Filter by minimum liquidity and sort by liquidity desc for best accuracy
+        const filteredPairs = data.pairs
+          .filter((p: any) => (p.liquidity?.usd || 0) > 1000)
+          .sort((a: any, b: any) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
+        const pair = filteredPairs[0] || data.pairs[0]; // fallback to first if none pass filter
+        if (pair?.priceUsd) {
+          const price = parseFloat(pair.priceUsd);
+          if (!isNaN(price) && price > 0) {
+            tokenUsdPrice = price;
+            change24h = pair.priceChange?.h24 || 0;
+            tokenName = pair.baseToken?.symbol || tokenName;
+            source = 'DexScreener';
+          }
+        }
       }
-    } catch(e) {}
+    } catch(e) { console.warn('[getPrice] tier failed:', e); }
   }
 
   if (tokenUsdPrice === 0) {

@@ -65,6 +65,8 @@ export class OneInchProvider implements DefiAggregatorProvider {
 
     const data = await res.json();
 
+    if (!data.dstAmount) throw new Error('1inch returned no output amount (dstAmount is missing). The token pair may have insufficient liquidity.');
+
     return {
       provider: this.manifest.name,
       routeId: `1inch-${crypto.randomUUID()}`,

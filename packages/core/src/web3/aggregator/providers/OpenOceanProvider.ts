@@ -33,7 +33,7 @@ export class OpenOceanProvider implements DefiAggregatorProvider {
 
   public async getQuote(request: QuoteRequest, context: ProviderExecutionContext): Promise<CanonicalRouteQuote> {
     const chainId = CHAIN_IDS[request.fromChain];
-    const slippage = request.slippageTolerance === "auto" ? "1" : request.slippageTolerance.toString();
+    const slippage = request.slippageTolerance === "auto" ? "0.5" : request.slippageTolerance.toString();
     
     const inTokenAddress = request.fromToken;
     const outTokenAddress = request.toToken;
@@ -64,6 +64,8 @@ export class OpenOceanProvider implements DefiAggregatorProvider {
     }
 
     const data = json.data;
+
+    if (!data.outAmount) throw new Error('OpenOcean returned no output amount (outAmount is missing). The token pair may have insufficient liquidity.');
 
     return {
       provider: this.manifest.name,

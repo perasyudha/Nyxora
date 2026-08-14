@@ -56,13 +56,12 @@ export async function confirmPendingTx(action: "approve" | "reject"): Promise<st
       result = await executeRevokeApproval(tx.chainName as any, tx.details, true);
 
     } else if (tx.type === 'limit_order') {
-      // Need dynamic import for logger to avoid circular dependency
-      const { logger } = await import('../../agent/reasoning');
+      const { logger } = await import('../../memory/logger');
       const success = logger.activateLimitOrder(tx.details.orderId);
       if (success) {
         result = `Limit Order ${tx.details.orderId} is now ACTIVE. The Event-Driven Engine is monitoring the market.`;
       } else {
-        throw new Error(`Failed to activate Limit Order. ID not found in database.`);
+        throw new Error(`Failed to activate Limit Order ID: ${tx.details.orderId}. It may have already been activated or the ID is incorrect.`);
       }
     }
     

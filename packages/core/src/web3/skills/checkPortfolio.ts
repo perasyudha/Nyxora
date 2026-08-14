@@ -5,7 +5,7 @@ import { TOKEN_MAP, ERC20_ABI } from '../utils/tokens';
 import { safeFetchJson } from '../../utils/httpClient';
 
 const portfolioCache: Record<string, { data: string, timestamp: number }> = {};
-const CACHE_TTL = 5000; // 5 seconds TTL
+const CACHE_TTL = 60000; // 60 seconds TTL
 
 const TESTNET_CHAINS = new Set(['sepolia', 'base_sepolia', 'arbitrum_sepolia', 'optimism_sepolia', 'robinhood_testnet']);
 
@@ -106,6 +106,7 @@ export async function checkPortfolio(chainName: ChainName, address?: `0x${string
       arbitrum: 'https://arbitrum.blockscout.com',
       polygon: 'https://polygon.blockscout.com',
       sepolia: 'https://eth-sepolia.blockscout.com',
+      bsc: 'https://bsc.blockscout.com',
       robinhood: 'https://robinhoodchain.blockscout.com',
     };
     
@@ -254,7 +255,7 @@ export async function checkPortfolio(chainName: ChainName, address?: `0x${string
     }
 
     for (const b of nonZeroBalances) {
-      const lookupAddr = String((b.isNative ? (chainTokens?.WETH || chainTokens?.WBNB) : b.address) || "").toLowerCase();
+      const lookupAddr = String((b.isNative ? nativeWrappedAddress : b.address) || "").toLowerCase();
       const price = priceMap[lookupAddr] || 0;
       const usdValue = b.balanceNum * price;
       totalUsdValue += usdValue;

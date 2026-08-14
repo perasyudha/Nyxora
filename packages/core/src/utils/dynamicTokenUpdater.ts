@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { safeFetchJson } from './httpClient';
 
 const CACHE_FILE = path.join(os.homedir(), '.nyxora', 'dynamic_tokens.json');
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
@@ -40,10 +41,9 @@ export async function fetchDynamicTokens(): Promise<DynamicTokens> {
   const result: DynamicTokens = {};
   console.log('[DynamicTokenUpdater] Fetching updated token lists...');
 
-  for (const [chain, url] of Object.entries(TOKEN_LIST_URLS)) {
+  const fetchPromises = Object.entries(TOKEN_LIST_URLS).map(async ([chain, url]) => {
     try {
-      const res = await fetch(url);
-      const data = await res.json();
+      const data = await safeFetchJson<any>(url, { timeoutMs: 8000 });
       
       let tokens: Array<{symbol: string, address: string}> = [];
       const targetChainId = CHAIN_ID_MAP[chain];
@@ -61,15 +61,21 @@ export async function fetchDynamicTokens(): Promise<DynamicTokens> {
         }));
       }
       
-      result[chain] = tokens;
+      return { chain, tokens };
     } catch (err) {
       console.warn(`[DynamicTokenUpdater] Failed to fetch list for ${chain}:`, err);
-      result[chain] = [];
+      return { chain, tokens: [] };
     }
+  });
+
+  const results = await Promise.all(fetchPromises);
+  for (const { chain, tokens } of results) {
+    result[chain] = tokens;
   }
 
   // Save to cache
   try {
+    fs.mkdirSync(path.dirname(CACHE_FILE), { recursive: true });
     fs.writeFileSync(CACHE_FILE, JSON.stringify(result, null, 2), 'utf-8');
   } catch (e) {
     console.error('[DynamicTokenUpdater] Failed to write cache', e);

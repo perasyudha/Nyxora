@@ -11,6 +11,9 @@ export const Security: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<{msg: string, type: 'ok' | 'err'} | null>(null);
 
+  const [registryStatus, setRegistryStatus] = useState<{ isActive: boolean; reason?: string } | null>(null);
+  const [registryLoading, setRegistryLoading] = useState(false);
+
   useEffect(() => {
     const fetchPolicy = async () => {
       try {
@@ -31,6 +34,10 @@ export const Security: React.FC = () => {
       }
     };
     fetchPolicy();
+  }, []);
+
+  useEffect(() => {
+    fetchRegistryStatus();
   }, []);
 
   const handleSave = async () => {
@@ -57,6 +64,19 @@ export const Security: React.FC = () => {
     } finally {
       setIsSaving(false);
       setTimeout(() => setToast(null), 3000);
+    }
+  };
+
+  const fetchRegistryStatus = async () => {
+    setRegistryLoading(true);
+    try {
+      const res = await apiFetch('/api/registry');
+      const data = await res.json();
+      setRegistryStatus(data);
+    } catch {
+      setRegistryStatus(null);
+    } finally {
+      setRegistryLoading(false);
     }
   };
 
@@ -149,6 +169,57 @@ export const Security: React.FC = () => {
             onChange={e => setBlacklist(e.target.value)}
             style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', padding: '12px', borderRadius: '6px', fontFamily: 'monospace', fontSize: '0.85rem', outline: 'none', minHeight: '80px', resize: 'vertical' }}
           />
+        </div>
+      </div>
+
+      {/* Kill Switch Section */}
+      <div style={{ marginTop: '32px' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-secondary)', marginBottom: '12px' }}>ON-CHAIN KILL SWITCH (BASE SEPOLIA)</div>
+        <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.95rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldAlert size={16} color="var(--accent)" /> Agent Registry Status
+              </div>
+              <p style={{ margin: '0 0 12px 0', color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.5 }}>
+                Register your agent on-chain to enable the Kill Switch. Once registered, your controller wallet can deactivate the agent remotely at any time — immediately blocking all transactions.
+              </p>
+              <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                Contract:{' '}
+                <a href="https://base-sepolia.blockscout.com/address/0x19F00Ac093B6b0a6Ae2f669dF698384ba79E37Be" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                  0x19F00...7Be ↗
+                </a>
+              </div>
+              {registryLoading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <Loader2 size={14} className="spin" /> Checking on-chain status...
+                </div>
+              ) : registryStatus ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600,
+                    background: registryStatus.isActive ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                    color: registryStatus.isActive ? '#10b981' : '#ef4444',
+                    border: `1px solid ${registryStatus.isActive ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`
+                  }}>
+                    {registryStatus.isActive ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
+                    {registryStatus.isActive ? 'Agent Active' : 'Agent Blocked'}
+                  </div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{registryStatus.reason}</div>
+                </div>
+              ) : (
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Status unavailable</div>
+              )}
+            </div>
+            <button
+              onClick={fetchRegistryStatus}
+              disabled={registryLoading}
+              style={{ padding: '8px 14px', background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', borderRadius: '6px', cursor: registryLoading ? 'not-allowed' : 'pointer', fontSize: '0.85rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}
+            >
+              {registryLoading ? <Loader2 size={13} className="spin" /> : <Shield size={13} />} Refresh
+            </button>
+          </div>
         </div>
       </div>
     </div>

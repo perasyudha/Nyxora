@@ -14,7 +14,9 @@ const CHAIN_IDS: Record<string, number> = {
   sepolia: 11155111,
   base_sepolia: 84532,
   arbitrum_sepolia: 421614,
-  optimism_sepolia: 11155420
+  optimism_sepolia: 11155420,
+  robinhood: 4663,
+  robinhood_testnet: 46630
 };
 const BLOCKSCOUT_URLS: Record<string, string> = {
   ethereum: 'https://eth.blockscout.com/api',
@@ -25,7 +27,9 @@ const BLOCKSCOUT_URLS: Record<string, string> = {
   sepolia: 'https://eth-sepolia.blockscout.com/api',
   base_sepolia: 'https://base-sepolia.blockscout.com/api',
   optimism_sepolia: 'https://optimism-sepolia.blockscout.com/api',
-  arbitrum_sepolia: 'https://arbitrum-sepolia.blockscout.com/api'
+  arbitrum_sepolia: 'https://arbitrum-sepolia.blockscout.com/api',
+  bsc: 'https://bsc.blockscout.com/api',
+  robinhood: 'https://robinhoodchain.blockscout.com/api'
 };
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -100,7 +104,7 @@ export async function getTxHistory(chainName: ChainName, address?: string, days:
           history.push({
             Date: new Date(parseInt(tx.timeStamp) * 1000).toISOString().split('T')[0],
             Type: isReceive ? 'Receive' : 'Send',
-            Token: chainName === 'bsc' ? 'BNB' : chainName === 'polygon' ? 'MATIC' : 'ETH',
+            Token: chainName === 'bsc' ? 'BNB' : chainName === 'polygon' ? 'MATIC' : chainName.startsWith('robinhood') ? 'ETH' : 'ETH',
             Amount: formatUnits(BigInt(tx.value), 18),
             From: tx.from,
             To: tx.to,

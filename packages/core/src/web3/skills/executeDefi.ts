@@ -139,21 +139,28 @@ export async function executeVaultDeposit(chainName: ChainName, params: any): Pr
 }
 
 export async function executeUniv3Mint(chainName: ChainName, params: any): Promise<string> {
-    const { positionManager, mintParams } = params;
+    const { positionManagerAddress, token0, token1, fee, tickLower, tickUpper, amount0Desired, amount1Desired, amount0Min, amount1Min, deadline } = params;
     const account = await getAddress() as `0x${string}`;
 
+    if (!positionManagerAddress || !token0 || !token1) {
+        throw new Error('Missing position manager or token addresses for Uniswap V3 mint.');
+    }
+    if (amount0Desired === undefined || amount1Desired === undefined) {
+        throw new Error('Missing amount parameters for Uniswap V3 mint.');
+    }
+
     const args = {
-        token0: mintParams.token0 as `0x${string}`,
-        token1: mintParams.token1 as `0x${string}`,
-        fee: mintParams.fee,
-        tickLower: mintParams.tickLower,
-        tickUpper: mintParams.tickUpper,
-        amount0Desired: BigInt(mintParams.amount0Desired),
-        amount1Desired: BigInt(mintParams.amount1Desired),
-        amount0Min: BigInt(mintParams.amount0Min),
-        amount1Min: BigInt(mintParams.amount1Min),
+        token0: token0 as `0x${string}`,
+        token1: token1 as `0x${string}`,
+        fee: Number(fee),
+        tickLower: Number(tickLower),
+        tickUpper: Number(tickUpper),
+        amount0Desired: BigInt(amount0Desired),
+        amount1Desired: BigInt(amount1Desired),
+        amount0Min: BigInt(amount0Min || '0'),
+        amount1Min: BigInt(amount1Min || '0'),
         recipient: account,
-        deadline: BigInt(mintParams.deadline)
+        deadline: BigInt(deadline || Math.floor(Date.now() / 1000) + 1200)
     };
 
     const dataHex = encodeFunctionData({
@@ -162,7 +169,6 @@ export async function executeUniv3Mint(chainName: ChainName, params: any): Promi
         args: [args]
     });
 
-    const valueWei = mintParams.value ? BigInt(mintParams.value).toString() : "0";
-    const hash = await sendToPolicyApi(chainName, positionManager, dataHex, valueWei);
+    const hash = await sendToPolicyApi(chainName, positionManagerAddress, dataHex, "0");
     return `Uniswap V3 LP successfully executed! Hash: ${hash}`;
 }

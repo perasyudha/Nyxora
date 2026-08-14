@@ -1,6 +1,6 @@
 {
   "name": "@nyxora-sdk/signer",
-  "version": "26.8.12",
+  "version": "26.8.14",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
