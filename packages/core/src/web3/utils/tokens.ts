@@ -112,6 +112,9 @@ export const TOKEN_MAP: Record<ChainName, Record<string, `0x${string}`>> = {
   },
   robinhood: {
     ETH: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    // WETH on Robinhood chain — required for native ETH price lookup via DexScreener.
+    // Confirmed from DexScreener live pairs: https://dexscreener.com/robinhood
+    WETH: "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
   },
   robinhood_testnet: {
     ETH: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",

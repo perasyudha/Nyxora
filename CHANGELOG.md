@@ -15,6 +15,13 @@ All notable changes to this project will be documented in this file.
 ### Dashboard UI Enhancements
 - **Security Dashboard**: Integrated a new On-Chain Kill Switch interface in `Security.tsx` (`/api/registry`). The dashboard now natively displays the live Base Sepolia registry status (🟢 Active / 🔴 Blocked) and provides direct integration links to the Blockscout smart contract for real-time agent registration and kill-switch toggling.
 
+### Gateway & Network
+- **Remote Access**: Fixed CORS policy (was blocking all non-localhost origins) and changed server host binding from `127.0.0.1` to `0.0.0.0`, enabling access from other devices on the same LAN or via Tailscale VPN. Token auth remains the security gatekeeper.
+- **Tailscale Conflict**: Removed the now-redundant `nyxora-gateway-forward.service` systemd service (a legacy TCP proxy for Tailscale) that was racing Nyxora for port 40000 on startup.
+
+### Web3 Bugfixes
+- **Robinhood ETH Price = $0**: Fixed `TOKEN_MAP.robinhood` missing a `WETH` entry, which caused `nativeWrappedAddress` to resolve to `undefined` and the DexScreener price lookup to silently skip ETH — resulting in ETH always showing $0 value on Robinhood chain. Added confirmed WETH contract `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73`.
+
 ## [26.8.12]
 
 ### x402 Agentic Payment Protocol
