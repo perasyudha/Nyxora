@@ -125,14 +125,13 @@ app.use(helmet({
   }
 }));
 app.use(cors({ 
-  origin: function (origin, callback) {
-    if (!origin || /^(http:\/\/(localhost|127\.0\.0\.1):\d+)$/.test(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-nyxora-token']
+  // Security is enforced by the x-nyxora-token auth middleware below.
+  // Blocking by Origin alone doesn't protect against curl/postman, so we allow
+  // all origins and rely on the token for access control — this also enables
+  // access from other devices on the LAN or via tunnels (Ngrok, Cloudflare).
+  origin: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-nyxora-token'],
+  credentials: true
 }));
 app.use(express.json());
 
@@ -1924,7 +1923,9 @@ export async function startServer() {
   });
 
   const PORT = CORE_PORT;
-  const HOST = process.env.HOST || '127.0.0.1';
+  // Bind to 0.0.0.0 so the server is reachable from other devices on the LAN
+  // or via tunnels (Ngrok, Cloudflare Tunnel). Override with HOST env var if needed.
+  const HOST = process.env.HOST || '0.0.0.0';
   const server = app.listen(PORT, HOST, () => {
     console.log(`🤖 Nyxora API Server running on ${HOST}:${PORT}`);
     
