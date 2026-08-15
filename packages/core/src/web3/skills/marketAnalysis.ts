@@ -4,6 +4,8 @@ import { safeFetchJson } from '../../utils/httpClient';
 import { generateMarketHealthReport, MarketHealthResult } from '../utils/riskIntelligence';
 import { fetchTokenSecurityData, formatSecurityReport, CHAIN_IDS } from './checkSecurity';
 import { ML_BASE_URL } from '../../config/constants';
+import { getMacroContext } from '../utils/macroFetcher';
+import { getPredictionMarkets } from '../utils/polymarket';
 
 export async function analyzeMarket(chainName: ChainName, tokenAddressOrSymbol: string): Promise<string> {
   try {
@@ -15,12 +17,11 @@ export async function analyzeMarket(chainName: ChainName, tokenAddressOrSymbol: 
     // ==========================================
     console.log(`[Market Intelligence] Delegating analysis for ${tokenAddressOrSymbol} to Python ML Engine...`);
     
-    let mlData;
-    try {
-        mlData = await safeFetchJson<any>(`${ML_BASE_URL}/web3/analyze?query=${tokenAddressOrSymbol}&chain=${chainName}`, { timeoutMs: 35000, retries: 1 });
-    } catch (error: any) {
-        return `[System Error] Failed to reach Python ML Engine. Make sure the daemon is running (Error: ${error.message})`;
-    }
+    const [mlData, macro, polymarketMacro] = await Promise.all([
+        safeFetchJson<any>(`${ML_BASE_URL}/web3/analyze?query=${encodeURIComponent(tokenAddressOrSymbol)}&chain=${encodeURIComponent(chainName)}`, { timeoutMs: 35000, retries: 1 }),
+        getMacroContext(),
+        getPredictionMarkets("Federal Reserve", 2)
+    ]);
     
     if (!mlData || mlData.detail) {
         return `[Market Intelligence] Failed to find data for ${tokenAddressOrSymbol} on DEX or CEX.`;
@@ -49,6 +50,8 @@ export async function analyzeMarket(chainName: ChainName, tokenAddressOrSymbol: 
         poolCreatedAt,
         txns24h
     } = mlData;
+
+    const polymarketCrypto = await getPredictionMarkets(officialSymbol || tokenAddressOrSymbol, 3);
 
     // ==========================================
     // PHASE 2: HEALTH & RISK SCORING (NODE.JS)
@@ -99,10 +102,16 @@ export async function analyzeMarket(chainName: ChainName, tokenAddressOrSymbol: 
     // ==========================================
     // PHASE 3: CONTEXT ASSEMBLY FOR LLM
     // ==========================================
-    let report = `📊 **Market Intelligence Report: ${officialSymbol}**\n`;
-    report += `CA: \`${contractAddress || 'N/A'}\` | Network: ${network}\n\n`;
+    let report = `ASSET CONTEXT (DO NOT SUBSTITUTE):\nName/Symbol: **${officialSymbol}** | Chain: ${network} | Contract: \`${contractAddress || 'N/A'}\`\n\n`;
+    report += `📊 **Market Intelligence Report: ${officialSymbol}**\n\n`;
     
     report += `**⭐ Overall Market Health Score:** ${healthResult.overallScore} / 10\n\n`;
+
+    report += `**[ MACRO ENVIRONMENT ]**\n`;
+    report += `- BTC Price: ${macro.btcPrice ? '$' + macro.btcPrice.toLocaleString() : 'N/A'}\n`;
+    report += `- DXY (US Dollar Index): ${macro.dxy ? macro.dxy.toFixed(2) : 'N/A'}\n`;
+    report += `- S&P 500: ${macro.sp500 ? macro.sp500.toFixed(2) : 'N/A'}\n`;
+    report += `- 10-Yr Treasury Yield: ${macro.tnx ? macro.tnx.toFixed(3) + '%' : 'N/A'}\n\n`;
     
     report += `**1. Trend Analysis:** ${trendClassification || 'N/A'} (Confidence: ${trendConfidence ? trendConfidence.toFixed(0) + '%' : 'N/A'})\n`;
     report += `- Narrative: ${narrative || 'N/A'}\n\n`;
@@ -133,7 +142,30 @@ export async function analyzeMarket(chainName: ChainName, tokenAddressOrSymbol: 
         report += formatSecurityReport(securityData) + '\n';
     }
 
-    report += `*System Note for LLM: You are a sharp, expert crypto financial advisor (Penasihat Keuangan Kripto). Use this exact data to provide a comprehensive "Market & Security Summary" in the user's native language. You MUST explicitly state the Token's Market Cap, Liquidity, 24h Volume, 24h Transactions, Pool Age, Holder Concentration, and Security/Honeypot status.\n\nCRITICAL FORMATTING RULE: You MUST use standard ASCII Hindu-Arabic numerals (0, 1, 2, 3, 4, 5, 6, 7, 8, 9) for ALL prices, percentages, and metrics. NEVER use Arabic-Indic numerals (۰, ۱, ۲...), Bengali numerals (০, ১, ২...), or any non-Latin script digits. DO NOT generate ASCII art, pseudo-graphics, or visual progress bars inside markdown table cells.\n\nCRITICAL TASK: Based on the combined technical indicators, liquidity risks, holder concentration, and smart contract security, you MUST provide a clear, strategic, and actionable recommendation on what the user should do with this token. Use terms like 'Quick Flip / Scalp', 'Hold for mid-term', 'Avoid at all costs (High Risk)', or 'DCA cautiously'. Justify your perspective logically using the provided data and the ML engine's narrative.\n\nIMPORTANT: Always include a clear disclaimer at the end (translated into the user's native language) stating that this analysis is NOT financial advice (NFA).*`;
+    report += `\n**[ POLYMARKET PREDICTION MARKETS ]**\n`;
+    report += `${polymarketMacro}\n`;
+    report += `${polymarketCrypto}\n`;
+
+    report += `*System Note for LLM: You are a sharp, expert crypto financial advisor. Use this exact data to provide a comprehensive "Market & Security Summary". You MUST explicitly state the Token's Market Cap, Liquidity, 24h Volume, 24h Transactions, Pool Age, Holder Concentration, and Security/Honeypot status.\n\n`;
+    report += `CRITICAL FORMATTING RULE: You MUST use standard ASCII Hindu-Arabic numerals (0-9) for ALL metrics.\n\n`;
+    report += `CRITICAL TASK: Based on the combined technical indicators, macro environment, prediction markets, and smart contract security, you MUST provide a clear, strategic, and actionable recommendation using the following 5-Tier Rating Scale:\n`;
+    report += `1. **Strong Buy** — High confidence, extremely favorable setup.\n`;
+    report += `2. **Buy / Overweight** — Favorable, suitable for DCA or building a position.\n`;
+    report += `3. **Hold / Neutral** — Wait for trend confirmation, mixed signals.\n`;
+    report += `4. **Sell / Underweight** — Unfavorable, consider taking profits or reducing exposure.\n`;
+    report += `5. **Strong Sell / Avoid** — High risk, bearish momentum, or security red flags. Do not enter.\n\n`;
+    report += `You MUST output your final decision in strict JSON format wrapped in a markdown json code block, followed by a friendly explanation in the user's native language.\n`;
+    report += `The JSON block MUST follow this exact schema:\n`;
+    report += `\`\`\`json\n`;
+    report += `{\n`;
+    report += `  "rating": "Strong Buy" | "Buy" | "Hold" | "Sell" | "Strong Sell",\n`;
+    report += `  "executiveSummary": "A concise action plan (entry strategy, position sizing, key risk levels).",\n`;
+    report += `  "investmentThesis": "Detailed reasoning anchored in specific evidence.",\n`;
+    report += `  "priceTarget": 0.00,\n`;
+    report += `  "confidence": "high" | "medium" | "low"\n`;
+    report += `}\n`;
+    report += `\`\`\`\n`;
+    report += `After the JSON block, provide a friendly and conversational summary of the analysis for the user. Always include a clear disclaimer that this is NOT financial advice (NFA).*`;
 
     return report;
 

@@ -599,6 +599,13 @@ app.get('/api/market-keys', (req, res) => {
           required: false,
           docsUrl: 'https://pro.coinmarketcap.com/',
           configured: !!keys.cmc_key
+        },
+        {
+          id: 'opensea',
+          label: 'OpenSea API Key (NFT Trades)',
+          required: false,
+          docsUrl: 'https://opensea.io/settings/developer',
+          configured: !!keys.opensea
         }
       ]
     });

@@ -65,6 +65,7 @@ export const getRouterLogoUrl = (router: string) => {
     case 'cmc_pro_key': return '/routers/cmc.png';
     case 'coingecko_key':
     case 'coingecko_pro_key': return '/routers/coingecko.png';
+    case 'opensea': return '/opensea.svg';
 
     case 'zerion_key': return '/routers/zerion.png';
     case 'auto': return ''; // Handled by NyxoraLogo

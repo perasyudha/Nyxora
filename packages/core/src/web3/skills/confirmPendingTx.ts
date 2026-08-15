@@ -3,6 +3,8 @@ import { executeTransfer } from './transfer';
 import { executeSwap } from './swapToken';
 import { executeBridge } from './bridgeToken';
 import { executeMintNft } from './mintNft';
+import { executeBuyNft } from './buyNft';
+import { executeSellNft } from './sellNft';
 import { executeCustomTx } from './customTx';
 import { executeApprove, executeAaveSupply, executeVaultDeposit, executeUniv3Mint } from './executeDefi';
 import { executeRevokeApproval } from './revokeApprovals';
@@ -42,6 +44,10 @@ export async function confirmPendingTx(action: "approve" | "reject"): Promise<st
       result = await executeBridge(tx.chainName as any, tx.details, true);
     } else if (tx.type === 'mint') {
       result = await executeMintNft(tx.chainName as any, tx.details, true);
+    } else if (tx.type === 'nftBuy') {
+      result = await executeBuyNft(tx.chainName as any, tx.details, true);
+    } else if (tx.type === 'nftList') {
+      result = await executeSellNft(tx.chainName as any, tx.details, true);
     } else if (tx.type === 'custom') {
       result = await executeCustomTx(tx.chainName as any, tx.details, true);
     } else if (tx.type === 'approve') {

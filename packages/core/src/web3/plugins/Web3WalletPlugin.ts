@@ -1,5 +1,7 @@
 import { Plugin } from '../../plugin/types';
 import { mintNftToolDefinition, prepareMintNft } from '../skills/mintNft';
+import { buyNftToolDefinition, prepareBuyNft } from '../skills/buyNft';
+import { sellNftToolDefinition, prepareSellNft } from '../skills/sellNft';
 import { customTxToolDefinition, prepareCustomTx } from '../skills/customTx';
 import { checkAddressToolDefinition, checkAddress } from '../skills/checkAddress';
 import { getMyAddressToolDefinition, getMyAddress } from '../skills/getMyAddress';
@@ -21,6 +23,8 @@ export class Web3WalletPlugin implements Plugin {
   public tools = [
     transferToolDefinition,
     mintNftToolDefinition,
+    buyNftToolDefinition,
+    sellNftToolDefinition,
     customTxToolDefinition,
     checkAddressToolDefinition,
     getMyAddressToolDefinition,
@@ -41,6 +45,12 @@ export class Web3WalletPlugin implements Plugin {
     },
     [mintNftToolDefinition.function.name]: async (args: any) => {
       return await prepareMintNft(args.chainName, args.contractAddress, args.functionSignature, args.argsStr, args.valueEth);
+    },
+    [buyNftToolDefinition.function.name]: async (args: any) => {
+      return await prepareBuyNft(args.chainName, args.contractAddress, args.tokenId);
+    },
+    [sellNftToolDefinition.function.name]: async (args: any) => {
+      return await prepareSellNft(args.chainName, args.contractAddress, args.tokenId);
     },
     [customTxToolDefinition.function.name]: async (args: any) => {
       return await prepareCustomTx(args.chainName, args.toAddress, args.dataHex, args.valueEth, args.gasLimitStr);

@@ -2,7 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [26.8.14]
+## [26.8.15]
+
+### Market Intelligence Enhancements (TradingAgents Tier 3)
+- **5-Tier Rating Scale**: Standardized `analyze_market` LLM recommendations to a formal 5-tier system (`Strong Buy → Strong Sell`). Replaces ad-hoc free-text like "DCA cautiously" with a parseable, consistent output format.
+- **Token Identity Anchor**: Added an `ASSET CONTEXT (DO NOT SUBSTITUTE)` header to all market analysis prompts containing the token's Name, Symbol, Chain, and Contract Address. Prevents LLM ticker hallucinations (e.g., confusing ARB with another "ARB" token).
+- **Macroeconomic Context** (`macroFetcher.ts`): Created a new utility that fetches DXY (US Dollar Index), S&P 500, 10-year Treasury Yield, and BTC price in parallel with the ML Engine. This macro context is injected into every market analysis prompt, giving the LLM awareness of broader market conditions. Data sourced from Yahoo Finance (free, no API key) with a 15-minute cache and DexScreener for BTC price (sorted by liquidity to avoid scam pairs).
+
+
 
 ### Web3 Core Fixes & Optimizations
 - **On-Chain Registry & Kill Switch**: Refactored `checkRegistryStatus.ts` to implement a strict fail-open policy for unregistered agents and network errors, while explicitly blocking deactivated agents. Added comprehensive registration guides to the LLM tool definition.
