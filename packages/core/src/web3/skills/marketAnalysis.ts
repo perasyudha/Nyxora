@@ -146,26 +146,38 @@ export async function analyzeMarket(chainName: ChainName, tokenAddressOrSymbol: 
     report += `${polymarketMacro}\n`;
     report += `${polymarketCrypto}\n`;
 
-    report += `*System Note for LLM: You are a sharp, expert crypto financial advisor. Use this exact data to provide a comprehensive "Market & Security Summary". You MUST explicitly state the Token's Market Cap, Liquidity, 24h Volume, 24h Transactions, Pool Age, Holder Concentration, and Security/Honeypot status.\n\n`;
-    report += `CRITICAL FORMATTING RULE: You MUST use standard ASCII Hindu-Arabic numerals (0-9) for ALL metrics.\n\n`;
-    report += `CRITICAL TASK: Based on the combined technical indicators, macro environment, prediction markets, and smart contract security, you MUST provide a clear, strategic, and actionable recommendation using the following 5-Tier Rating Scale:\n`;
-    report += `1. **Strong Buy** — High confidence, extremely favorable setup.\n`;
-    report += `2. **Buy / Overweight** — Favorable, suitable for DCA or building a position.\n`;
-    report += `3. **Hold / Neutral** — Wait for trend confirmation, mixed signals.\n`;
-    report += `4. **Sell / Underweight** — Unfavorable, consider taking profits or reducing exposure.\n`;
-    report += `5. **Strong Sell / Avoid** — High risk, bearish momentum, or security red flags. Do not enter.\n\n`;
-    report += `You MUST output your final decision in strict JSON format wrapped in a markdown json code block, followed by a friendly explanation in the user's native language.\n`;
-    report += `The JSON block MUST follow this exact schema:\n`;
-    report += `\`\`\`json\n`;
-    report += `{\n`;
-    report += `  "rating": "Strong Buy" | "Buy" | "Hold" | "Sell" | "Strong Sell",\n`;
-    report += `  "executiveSummary": "A concise action plan (entry strategy, position sizing, key risk levels).",\n`;
-    report += `  "investmentThesis": "Detailed reasoning anchored in specific evidence.",\n`;
-    report += `  "priceTarget": 0.00,\n`;
-    report += `  "confidence": "high" | "medium" | "low"\n`;
-    report += `}\n`;
-    report += `\`\`\`\n`;
-    report += `After the JSON block, provide a friendly and conversational summary of the analysis for the user. Always include a clear disclaimer that this is NOT financial advice (NFA).*`;
+    report += `*System Note for LLM: You are a sharp, expert crypto financial advisor. Use the data above to produce a clean, highly professional, and well-structured analysis report in the user's native language. 
+
+CRITICAL: DO NOT output raw JSON blocks. Format everything in clean, beautiful Markdown for a professional trading report.
+
+STRUCTURE (in this exact order):
+1. **Header**: "📊 **Analisa [SYMBOL]** — [CHAIN] | [DATE]"
+2. **Market Overview**: A 2-3 sentence narrative summary of the current price action and momentum.
+3. **Key Technical Indicators** (bulleted list):
+   - **Harga Saat Ini**: $[Price] | **Resistance**: $[MA-50] (MA-50), $[EMA-20] (EMA-20)
+   - **RSI (14)**: [Value] ([Status])
+   - **MACD**: [Value] ([Momentum])
+   - **OBV**: [Status/Trend]
+   - **Volume (24h)**: $[Volume]
+   - **Volatilitas**: Bollinger Bandwidth [Value]%, ATR $[Value]
+4. **Macro & Prediction Markets**: 2-3 sentences integrating DXY, S&P 500, Treasury Yield, and relevant Polymarket probabilities.
+5. **Security & On-Chain Risk** (only if security data exists): Honeypot check & holder concentration.
+6. **Trading Strategy**:
+   - **Jika Sudah Punya Posisi**: [Saran hold/cut loss] (Stop-Loss: $[Price])
+   - **Jika Mau Entry Baru**: [Saran entry/DCA zone]
+   - **Target Harga**: Short-term $[Target 1], Mid-term $[Target 2]
+7. **🎯 Ringkasan Keputusan**:
+   - **Rekomendasi**: **[Strong Buy / Buy / Hold / Sell / Strong Sell]**
+   - **Confidence Level**: [High / Medium / Low]
+   - **Price Target**: $[Price]
+   - **Action Plan**: [One concise sentence summary]
+8. **Disclaimer**: One short line NFA disclaimer in the user's language.
+
+CRITICAL RULES:
+- Use ONLY standard ASCII numerals (0-9). NO Arabic-Indic or non-Latin digits.
+- DO NOT output any JSON blocks or code fences.
+- Use clear spacing between sections so it looks clean and readable on Telegram.
+- Tone: Sharp, objective, institutional-grade, easy to skim.*`;
 
     return report;
 

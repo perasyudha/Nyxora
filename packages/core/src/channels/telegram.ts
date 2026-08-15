@@ -23,6 +23,72 @@ let runnerInstance: any = null;
 const activeTypingIntervals = new Map<string, NodeJS.Timeout>();
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Helper: Auto-wrap bare JSON objects in code fences
+// Detects standalone { ... } blocks not already inside ``` and wraps them.
+// ─────────────────────────────────────────────────────────────────────────────
+function wrapBareJsonBlocks(text: string): string {
+  const lines = text.split('\n');
+  const result: string[] = [];
+  let i = 0;
+  let insideCodeBlock = false;
+
+  while (i < lines.length) {
+    const trimmed = lines[i].trim();
+
+    // Track code fence open/close
+    if (trimmed.startsWith('```')) {
+      insideCodeBlock = !insideCodeBlock;
+      result.push(lines[i]);
+      i++;
+      continue;
+    }
+
+    // If inside a code block, pass through unchanged
+    if (insideCodeBlock) {
+      result.push(lines[i]);
+      i++;
+      continue;
+    }
+
+    // Detect start of a bare JSON object: line is just '{'
+    if (trimmed === '{') {
+      let depth = 0;
+      let j = i;
+      const jsonLines: string[] = [];
+
+      while (j < lines.length) {
+        const l = lines[j];
+        jsonLines.push(l);
+        for (const ch of l) {
+          if (ch === '{') depth++;
+          else if (ch === '}') depth--;
+        }
+        j++;
+        if (depth === 0) break;
+      }
+
+      const jsonStr = jsonLines.join('\n').trim();
+      try {
+        JSON.parse(jsonStr);
+        // Valid JSON — wrap in code fence
+        result.push('```json');
+        result.push(jsonStr);
+        result.push('```');
+        i = j;
+        continue;
+      } catch {
+        // Not valid JSON — pass through as-is
+      }
+    }
+
+    result.push(lines[i]);
+    i++;
+  }
+
+  return result.join('\n');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Telegram Rich Markdown Formatter
 // Keeps raw Markdown but strips LLM artifacts for sendRichMessage
 // ─────────────────────────────────────────────────────────────────────────────
@@ -46,6 +112,17 @@ export function formatToRichMarkdown(text: string): string {
   // Strip UI-specific HTML tags (e.g. span for colors) that leak in Telegram
   md = md.replace(/<\/?span[^>]*>/gi, '');
 
+  // Auto-wrap bare JSON blocks in code fences
+  md = wrapBareJsonBlocks(md);
+
+  // Escape dollar signs outside of code blocks so Telegram doesn't interpret crypto prices as LaTeX math formulas
+  // (e.g. "$62,968 tertahan di bawah MA-50 ($63,882)" -> "\$62,968 tertahan di bawah MA-50 (\$63,882)")
+  const parts = md.split(/(```[\s\S]*?```|`[^`]+`)/g);
+  md = parts.map(part => {
+    if (part.startsWith('`')) return part;
+    return part.replace(/\$/g, '\\$');
+  }).join('');
+
   return md.trim();
 }
 
@@ -53,16 +130,24 @@ export function formatToRichMarkdown(text: string): string {
 // Telegram HTML Formatter
 export function formatToTelegramHTML(text: string): string {
   if (!text) return '';
-  
-  // Strip UI-specific HTML tags (e.g. span) before escaping
-  let html = text.replace(/<\/?span[^>]*>/gi, '');
 
-  html = html
+  // Strip UI-specific HTML tags (e.g. span) before any processing
+  let md = text.replace(/<\/?span[^>]*>/gi, '');
+
+  // Strip markdown tool calls BEFORE HTML escaping
+  md = md.replace(/```(?:json)?\s*\[?\s*\{\s*"(?:tool_name|function_name)"[\s\S]*?(?:\]\s*```|```|$)/gi, '');
+  md = md.replace(/\[\s*\{\s*"(?:tool_name|function_name)"[\s\S]*?(?:\]|$)/gi, '');
+
+  // Auto-wrap bare JSON objects in code fences BEFORE HTML escaping
+  md = wrapBareJsonBlocks(md);
+
+  // Now HTML-escape
+  let html = md
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // Strip reasoning blocks (escaped and raw forms) ONLY if they are properly closed.
+  // Strip reasoning blocks (escaped and raw forms)
   const reasoningTags = 'think|thought|thinking|reasoning|analysis|reflection';
   html = html.replace(new RegExp(`&lt;(${reasoningTags})&gt;[\\s\\S]*?&lt;\\/\\1&gt;\\n?`, 'gi'), '');
   html = html.replace(new RegExp(`<(${reasoningTags})>[\\s\\S]*?<\\/\\1>\\n?`, 'gi'), '');
@@ -74,17 +159,14 @@ export function formatToTelegramHTML(text: string): string {
   html = html.replace(new RegExp(`<(${artifactTags})>[\\s\\S]*?<\\/\\1>\\n?`, 'gi'), '');
   html = html.replace(new RegExp(`<(${artifactTags})>[\\s\\S]*$`, 'gi'), '');
 
-  // Strip markdown tool calls
-  html = html.replace(/```(?:json)?\s*\[?\s*\{\s*"(?:tool_name|function_name)"[\s\S]*?(?:\]\s*```|```|$)/gi, '');
-  // Strip raw JSON tool arrays
-  html = html.replace(/\[\s*\{\s*"(?:tool_name|function_name)"[\s\S]*?(?:\]|$)/gi, '');
-
-  // Convert markdown formatting
+  // Convert markdown code blocks
   html = html.replace(/```(\w+)\n([\s\S]*?)```/g, (match, lang, code) => {
     return `<pre><code class="language-${lang}">${code.trimEnd()}</code></pre>`;
   });
   html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Convert **bold** and *italic*
   html = html.replace(/\*\*([\s\S]*?)\*\*/g, (match, p1) => {
     if (p1.includes('<pre>') || p1.includes('<code>')) return match;
     return `<b>${p1}</b>`;
@@ -94,14 +176,14 @@ export function formatToTelegramHTML(text: string): string {
     return `<i>${p1}</i>`;
   });
 
-  // Un-flatten accidentally joined table rows (small model hallucination)
-  // 1. Separate table header from preceding text on same line (e.g., "4. Layanan: | col1 | col2 | |---|---|")
+  // Convert --- horizontal rules to a clean visual divider
+  html = html.replace(/^[ \t]*---[ \t]*$/gm, '\n<b>──────────────────────</b>\n');
+
+  // Un-flatten accidentally joined table rows
   html = html.replace(/(^|\n)([^|\r\n]+?)[ \t]*(\|[^\r\n]+\|)[ \t]*(?=\|[ \t]*[-:]+[-| :]*\|)/g, '$1$2\n$3');
-  // 2. Separate header row from separator row if stuck together
   html = html
     .replace(/\|[ \t]*\|[ \t]*(?=[-:]+[-| :]*\|)/g, '|\n|')
     .replace(/(\|[ \t]*[-:]+[-| :]*\|)[ \t]*\|/g, '$1\n|');
-  // 3. Separate table data rows that are joined on the same line
   html = html.replace(/\|[ \t]*\|[ \t]*(?=[^| \t\r\n])/g, '|\n|');
 
   // Convert markdown tables to preformatted text
