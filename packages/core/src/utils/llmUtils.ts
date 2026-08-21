@@ -113,7 +113,8 @@ export async function getLLMClient(): Promise<LLMProvider> {
 
   let apiKey = '';
   const keyName = `${providerName}_key`;
-  apiKey = vaultKeys[keyName] || config.credentials?.[keyName] || '';
+  const keyNameAlias = `${providerName}_api_key`; // support alias (e.g. 9router_api_key)
+  apiKey = vaultKeys[keyName] || vaultKeys[keyNameAlias] || config.credentials?.[keyName] || config.credentials?.[keyNameAlias] || '';
 
   if (!apiKey && providerConf.requiresApiKey) {
     throw new Error(`[Security] No API Key found for ${providerName} in OS Keyring. Please run 'nyxora set-key ${providerName} <key>' or 'nyxora setup'.`);
@@ -162,7 +163,7 @@ function isUnsupportedParamError(errMsg: string): boolean {
     errMsg.includes('unknown field') ||
     errMsg.includes('extra inputs are not permitted') ||
     errMsg.includes('unrecognized request argument') ||
-    errMsg.includes('is not supported') && (errMsg.includes('frequency_penalty') || errMsg.includes('presence_penalty') || errMsg.includes('top_p') || errMsg.includes('tool_choice'))
+    errMsg.includes('is not supported') && (errMsg.includes('frequency_penalty') || errMsg.includes('presence_penalty') || errMsg.includes('top_p') || errMsg.includes('tool_choice') || errMsg.includes('reasoning_effort'))
   );
 }
 
@@ -199,6 +200,7 @@ export async function executeWithRetry(
             delete stripped.frequency_penalty;
             delete stripped.presence_penalty;
             delete stripped.repetition_penalty;
+            delete stripped.reasoning_effort;
             // Only strip top_p if both temperature and top_p are set (some models reject the combo)
             if (stripped.temperature !== undefined && stripped.top_p !== undefined) {
               delete stripped.top_p;

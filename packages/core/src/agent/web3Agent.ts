@@ -523,7 +523,9 @@ export async function processWeb3Intent(input: string, role: 'user' | 'system' =
     const status = error?.status || error?.response?.status;
     let errorMsg = '⚠️ All models are temporarily rate-limited. Please try again in a few minutes.';
     
-    if (status === 400 || (error.message && error.message.toLowerCase().includes('invalid'))) {
+    if (error.message && error.message.toLowerCase().includes('invalid api key')) {
+      errorMsg = '⚠️ Invalid API Key. Please check your LLM provider credentials in Settings.';
+    } else if (status === 400 || (error.message && error.message.toLowerCase().includes('invalid'))) {
       errorMsg = '⚠️ Failed to parse instruction. The LLM had trouble determining the appropriate tool format. Please describe your command more specifically.';
     }
     
@@ -922,7 +924,9 @@ Do NOT output filler text like "Wait, I will check". Act now.`;
     console.error('LLM Stream Error:', error);
     const status = error?.status || error?.response?.status;
     let errorMsg = '⚠️ All models are temporarily rate-limited. Please try again in a few minutes.';
-    if (status === 400 || (error.message && error.message.toLowerCase().includes('invalid'))) {
+    if (error.message && error.message.toLowerCase().includes('invalid api key')) {
+      errorMsg = '⚠️ Invalid API Key. Please check your LLM provider credentials in Settings.';
+    } else if (status === 400 || (error.message && error.message.toLowerCase().includes('invalid'))) {
       errorMsg = '⚠️ Failed to parse instruction. Please describe your command more specifically.';
     }
     logger.addEntry({ role: 'assistant', content: errorMsg }, sessionId);
