@@ -9,7 +9,7 @@ let cachedApiKey = '';
 
 export const PROVIDER_CONFIGS: Record<string, { baseURL?: string; requiresApiKey: boolean }> = {
   ollama: { baseURL: process.env.OLLAMA_BASE_URL ? `${process.env.OLLAMA_BASE_URL}/v1` : 'http://localhost:11434/v1', requiresApiKey: false },
-  '9router': { baseURL: 'http://localhost:20128/v1', requiresApiKey: false },
+  '9router': { baseURL: 'http://localhost:20128/v1', requiresApiKey: true },
   gemini: { baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/', requiresApiKey: true },
   openrouter: { baseURL: 'https://openrouter.ai/api/v1', requiresApiKey: true },
   groq: { baseURL: 'https://api.groq.com/openai/v1', requiresApiKey: true },
