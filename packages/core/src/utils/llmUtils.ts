@@ -163,6 +163,8 @@ function isUnsupportedParamError(errMsg: string): boolean {
     errMsg.includes('unknown field') ||
     errMsg.includes('extra inputs are not permitted') ||
     errMsg.includes('unrecognized request argument') ||
+    errMsg.includes('repetition penalty must be') ||
+    errMsg.includes('repetition_penalty') ||
     errMsg.includes('is not supported') && (errMsg.includes('frequency_penalty') || errMsg.includes('presence_penalty') || errMsg.includes('top_p') || errMsg.includes('tool_choice') || errMsg.includes('reasoning_effort'))
   );
 }
