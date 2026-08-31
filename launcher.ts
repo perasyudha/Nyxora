@@ -180,6 +180,11 @@ setTimeout(() => {
     setTimeout(() => {
       const corePath = path.join(__dirnameResolved, `packages/core/src/gateway/cli${ext}`);
       const args = process.argv.slice(2);
+      // Kill any lingering process on port 40000 before spawning Core to prevent EADDRINUSE crash loops
+      if (process.platform !== 'win32') {
+        try { require('child_process').execSync(`fuser -k ${CORE_PORT}/tcp 2>/dev/null || true`); } catch (e) { }
+        try { require('child_process').execSync(`lsof -ti tcp:${CORE_PORT} | xargs kill -9 2>/dev/null || true`); } catch (e) { }
+      }
       const core = spawnService('Core', cmd, [...baseArgs, corePath, ...args], env, true);
       children.push(core);
 
